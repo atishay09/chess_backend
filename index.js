@@ -412,6 +412,114 @@ switch(Status){
   
 });
 
+app.post("/api/createTournament", (req, res) => {
+  const T_Id = req.body.T_Id;
+  const T_Name = req.body.T_Name;
+  const TotalPoints = req.body.TotalPoints;
+  const TotalGames = req.body.TotalGames;
+  const Description = req.body.Description;
+  const T_img = req.body.T_img;
+  const Status = req.body.Status;
+  const T_Fee = req.body.T_Fee;
+
+  
+
+
+  db.query(
+    `insert into Tournaments (T_Id,T_Name,TotalPoints,TotalGames,Description,T_img,Status,T_Fee) values ('${T_Id}', '${T_Name}', '${TotalPoints}', '${TotalGames}', '${Description}',  '${T_img}','${Status}', '${T_Fee}');`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          console.log(result);
+          res.send("Succefully added to db");
+      }
+      
+    }
+  );
+  
+});
+
+app.get("/api/getAllTournament", (req, res) => {
+  
+  db.query(`SELECT * FROM Chess.Tournaments;`, (err, result) => {
+    if (err) {
+      console.log(err);
+      res.status(400).send(err.sqlMessage);
+    }
+    else{
+        console.log(result);
+        res.send(result);
+    }
+  });
+})
+
+app.post("/api/createTournamentPlayers", (req, res) => {
+  const UserId = req.body.UserId;
+  const T_id = req.body.T_id;
+  const Timestamp = req.body.Timestamp;
+  const T_Points = req.body.T_Points;
+  const MatchesWon = req.body.MatchesWon;
+  const MatchesLoss = req.body.MatchesLoss;
+  const MatchesDrawn = req.body.MatchesDrawn;
+  const TotalMatches = req.body.TotalMatches;
+
+  
+
+
+  db.query(
+    `insert into T_Players (UserId,T_id,Timestamp,T_Points,MatchesWon,MatchesLoss,MatchesDrawn,TotalMatches) values ('${UserId}', '${T_id}', '${Timestamp}', '${T_Points}', '${MatchesWon}',  '${MatchesLoss}','${MatchesDrawn}', '${TotalMatches}');`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          console.log(result);
+          res.send("Succefully added to db");
+      }
+      
+    }
+  );
+  
+});
+
+app.get("/api/getRoomId", (req, res) => {
+  const Timestamp =new Date().valueOf();
+
+  
+
+
+  db.query(
+    `insert into emp ( timestamp) value("${Timestamp}");`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          console.log(result);
+          db.query(`select gno from emp where timestamp = "${Timestamp}";`, (err, result) => {
+            if (err) {
+              console.log(err);
+              res.status(400).send(err.sqlMessage);
+            }
+            else{
+                console.log(result);
+                res.send(result);
+            }
+          });
+      }
+      
+    }
+  );
+  
+});
 
 app.listen(process.env.PORT || 4000, () => {
     console.log(`Example app listening at http://localhost: 4000`);
