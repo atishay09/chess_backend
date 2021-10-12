@@ -412,6 +412,158 @@ switch(Status){
   
 });
 
+app.post("/api/createTournament", (req, res) => {
+  const T_Id = req.body.T_Id;
+  const T_Name = req.body.T_Name;
+  const TotalPoints = req.body.TotalPoints;
+  const TotalGames = req.body.TotalGames;
+  const Description = req.body.Description;
+  const T_img = req.body.T_img;
+  const Status = req.body.Status;
+  const T_Fee = req.body.T_Fee;
+  const Max_Players = req.body.Max_Players;
+
+  
+
+
+  db.query(
+    `insert into Tournaments (T_Id,T_Name,TotalPoints,TotalGames,Description,T_img,Status,T_Fee,Max_Players) values ('${T_Id}', '${T_Name}', '${TotalPoints}', '${TotalGames}', '${Description}',  '${T_img}','${Status}', '${T_Fee}', ${Max_Players});`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          console.log(result);
+          res.send("Succefully added to db");
+      }
+      
+    }
+  );
+  
+});
+
+app.get("/api/getAllTournament", (req, res) => {
+  
+  db.query(`SELECT * FROM Chess.Tournaments;`, (err, result) => {
+    if (err) {
+      console.log(err);
+      res.status(400).send(err.sqlMessage);
+    }
+    else{
+        console.log(result);
+        res.send(result);
+    }
+  });
+})
+
+app.post("/api/createTournamentPlayers", (req, res) => {
+  const UserId = req.body.UserId;
+  const T_id = req.body.T_id;
+  const Timestamp = req.body.Timestamp;
+  const T_Points = req.body.T_Points;
+  const MatchesWon = req.body.MatchesWon;
+  const MatchesLoss = req.body.MatchesLoss;
+  const MatchesDrawn = req.body.MatchesDrawn;
+  const TotalMatches = req.body.TotalMatches;
+
+  
+
+
+  db.query(
+    `insert into T_Players (UserId,T_id,Timestamp,T_Points,MatchesWon,MatchesLoss,MatchesDrawn,TotalMatches) values ('${UserId}', '${T_id}', '${Timestamp}', '${T_Points}', '${MatchesWon}',  '${MatchesLoss}','${MatchesDrawn}', '${TotalMatches}');`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          console.log(result);
+          res.send("Succefully added to db");
+      }
+      
+    }
+  );
+  
+});
+
+app.get("/api/getRoomId", (req, res) => {
+  const Timestamp =new Date().valueOf();
+
+  
+
+
+  db.query(
+    `insert into emp ( timestamp) value("${Timestamp}");`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          console.log(result);
+          db.query(`select gno from emp where timestamp = "${Timestamp}";`, (err, result) => {
+            if (err) {
+              console.log(err);
+              res.status(400).send(err.sqlMessage);
+            }
+            else{
+                console.log(result);
+                res.send(result);
+            }
+          });
+      }
+      
+    }
+  );
+  
+});
+app.get("/api/getTournamentByAuth/:UserId", (req, res) => {
+  const UserId = req.params.UserId;
+  db.query(
+    `SELECT * , case when exists( SELECT * FROM T_Players WHERE UserId = '${UserId}' and T_Id = Tournaments.T_Id ) then 'True' else 'False' end as isPresent, (select count(*) from T_Players where T_Players.T_Id = Tournaments.T_Id) as count, case when (select count(*) from T_Players where T_Players.T_Id = Tournaments.T_Id) >= Max_Players then "true" else "false" end as Max_Reached FROM Chess.Tournaments;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          console.log(result);
+          res.send(result);
+      }
+      
+    }
+  );
+  
+});
+app.post("/api/DeleteTPlayers", (req, res) => {
+  const T_Id = req.body.T_Id;
+  const UserId = req.body.UserId;
+
+  
+
+
+  db.query(
+    `delete from T_Players where T_Id = "${T_Id}" and UserId = "${UserId}";`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+      }
+      else{
+          console.log(result);
+          res.send("Succefully added to db");
+      }
+      
+    }
+  );
+  
+});
+
 
 app.listen(process.env.PORT || 4000, () => {
     console.log(`Example app listening at http://localhost: 4000`);
