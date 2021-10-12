@@ -421,12 +421,13 @@ app.post("/api/createTournament", (req, res) => {
   const T_img = req.body.T_img;
   const Status = req.body.Status;
   const T_Fee = req.body.T_Fee;
+  const Max_Players = req.body.Max_Players;
 
   
 
 
   db.query(
-    `insert into Tournaments (T_Id,T_Name,TotalPoints,TotalGames,Description,T_img,Status,T_Fee) values ('${T_Id}', '${T_Name}', '${TotalPoints}', '${TotalGames}', '${Description}',  '${T_img}','${Status}', '${T_Fee}');`,
+    `insert into Tournaments (T_Id,T_Name,TotalPoints,TotalGames,Description,T_img,Status,T_Fee,Max_Players) values ('${T_Id}', '${T_Name}', '${TotalPoints}', '${TotalGames}', '${Description}',  '${T_img}','${Status}', '${T_Fee}', ${Max_Players});`,
     (err, result) => {
       if (err) {
         console.log(err);
@@ -520,6 +521,49 @@ app.get("/api/getRoomId", (req, res) => {
   );
   
 });
+app.get("/api/getTournamentByAuth/:UserId", (req, res) => {
+  const UserId = req.params.UserId;
+  db.query(
+    `SELECT * , case when exists( SELECT * FROM T_Players WHERE UserId = '${UserId}' and T_Id = Tournaments.T_Id ) then 'True' else 'False' end as isPresent, (select count(*) from T_Players where T_Players.T_Id = Tournaments.T_Id) as count, case when (select count(*) from T_Players where T_Players.T_Id = Tournaments.T_Id) >= Max_Players then "true" else "false" end as Max_Reached FROM Chess.Tournaments;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          console.log(result);
+          res.send(result);
+      }
+      
+    }
+  );
+  
+});
+app.post("/api/DeleteTPlayers", (req, res) => {
+  const T_Id = req.body.T_Id;
+  const UserId = req.body.UserId;
+
+  
+
+
+  db.query(
+    `delete from T_Players where T_Id = "${T_Id}" and UserId = "${UserId}";`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+      }
+      else{
+          console.log(result);
+          res.send("Succefully added to db");
+      }
+      
+    }
+  );
+  
+});
+
 
 app.listen(process.env.PORT || 4000, () => {
     console.log(`Example app listening at http://localhost: 4000`);
