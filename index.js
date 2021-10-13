@@ -563,7 +563,44 @@ app.post("/api/DeleteTPlayers", (req, res) => {
   );
   
 });
+app.get("/api/getUserTournament/:UserId", (req, res) => {
+  const UserId = req.params.UserId;
+  db.query(
+    `SELECT T_Players.*, Tournaments.* FROM Chess.T_Players inner join Tournaments on Tournaments.T_Id = T_Players.T_Id where UserId="${UserId}";`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
 
+      }
+      else{
+          console.log(result);
+          res.send(result);
+      }
+      
+    }
+  );
+  
+});
+app.get("/api/getTournamentPlayers/:T_Id", (req, res) => {
+  const T_Id = req.params.T_Id;
+  db.query(
+    `SELECT * FROM Chess.T_Players where T_Id = "${T_Id}";`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          console.log(result);
+          res.send(result);
+      }
+      
+    }
+  );
+  
+});
 
 app.listen(process.env.PORT || 4000, () => {
     console.log(`Example app listening at http://localhost: 4000`);
