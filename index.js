@@ -601,6 +601,162 @@ app.get("/api/getTournamentPlayers/:T_Id", (req, res) => {
   );
   
 });
+app.post("/api/createTournamentStats", (req, res) => {
+  const UserId = req.body.UserId;
+  const T_Id = req.body.T_Id;
+  const Status = req.body.Status;  
+  const MatchPoints = req.body.MatchPoints; 
+  
+switch(Status){
+  case 'Won':
+    db.query(
+      `insert into Logs (UserId,Logs.Won) values ('${UserId}','1'); `,
+      (err, result) => {
+        if (err) {
+          console.log(err);
+          res.status(400).send(err.sqlMessage);
+    
+        }
+        else{
+            console.log(result);
+            db.query(
+              `update T_Players set T_Points = T_Points + ${MatchPoints} where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points + ${MatchPoints} > 0;`,
+              (err, result) => {
+                if (err) {
+                  console.log(err);
+                  res.status(400).send(err.sqlMessage);
+          
+                }
+                else{
+                    console.log(result);
+                    res.send("Match Won");
+                }
+                
+              }
+            );
+        }
+        
+      }
+    );
+    break;
+  case 'Lose':
+    db.query(
+      `insert into Logs (UserId,Logs.Lose) values ('${UserId}','1'); `,
+      (err, result) => {
+        if (err) {
+          console.log(err);
+          res.status(400).send(err.sqlMessage);
+    
+        }
+        else{
+            console.log(result);
+            res.send("Match Lose");
+        }
+        
+      }
+    );
+    break;
+  case 'Drawn':
+    db.query(
+      `insert into Logs (UserId,Logs.Drawn) values ('${UserId}','1'); `,
+      (err, result) => {
+        if (err) {
+          console.log(err);
+          res.status(400).send(err.sqlMessage);
+    
+        }
+        else{
+            console.log(result);
+            db.query(
+              `update T_Players set T_Points = T_Points + ${MatchPoints} where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points + ${MatchPoints} > 0;`,
+              (err, result) => {
+                if (err) {
+                  console.log(err);
+                  res.status(400).send(err.sqlMessage);
+          
+                }
+                else{
+                    console.log(result);
+                    res.send("Match Drawn");
+                }
+                
+              }
+            );
+        }
+        
+      }
+    );
+    break;
+  case 'Match':
+    db.query(
+      `insert into Logs (UserId,Logs.Match) values ('${UserId}','1'); `,
+      (err, result) => {
+        if (err) {
+          console.log(err);
+          res.status(400).send(err.sqlMessage);
+    
+        }
+        else{
+            console.log(result);
+            db.query(
+              `update T_Players set T_Points = T_Points - ${MatchPoints} where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points - ${MatchPoints} > 0;`,
+              (err, result) => {
+                if (err) {
+                  console.log(err);
+                  res.status(400).send(err.sqlMessage);
+          
+                }
+                else{
+                    console.log(result);
+                    res.send("Match Started");
+                }
+                
+              }
+            );
+        }
+        
+      }
+    );
+    break;
+  case 'Join':
+    db.query(
+      `insert into Logs (UserId,Logs.Match) values ('${UserId}','1'); `,
+      (err, result) => {
+        if (err) {
+          console.log(err);
+          res.status(400).send(err.sqlMessage);
+    
+        }
+        else{
+            console.log(result);
+            db.query(
+              `update T_Players set T_Points = T_Points - ${MatchPoints} where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points - ${MatchPoints} > 0;`,
+              (err, result) => {
+                if (err) {
+                  console.log(err);
+                  res.status(400).send(err.sqlMessage);
+          
+                }
+                else{
+                    console.log(result);
+                    res.send("Match Joined");
+                }
+                
+              }
+            );
+        }
+        
+      }
+    );
+    break;
+  default:
+    res.status(400).send("Invalid Query, try 'Match','Join','Drawn','Lose','Won' ")
+  
+}
+ 
+
+  
+});
 
 app.listen(process.env.PORT || 4000, () => {
     console.log(`Example app listening at http://localhost: 4000`);
