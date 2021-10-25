@@ -585,7 +585,7 @@ app.get("/api/getUserTournament/:UserId", (req, res) => {
 app.get("/api/getTournamentPlayers/:T_Id", (req, res) => {
   const T_Id = req.params.T_Id;
   db.query(
-    `SELECT * FROM Chess.T_Players where T_Id = "${T_Id}";`,
+    `SELECT * FROM Chess.T_Players where T_Id = "${T_Id}" and inMatch = "0";`,
     (err, result) => {
       if (err) {
         console.log(err);
@@ -620,7 +620,7 @@ switch(Status){
         else{
             console.log(result);
             db.query(
-              `update T_Players set T_Points = T_Points + ${MatchPoints} where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points + ${MatchPoints} > 0;`,
+              `update T_Players set T_Points = T_Points + ${MatchPoints}, inMatch = '0' where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points + ${MatchPoints} > 0;`,
               (err, result) => {
                 if (err) {
                   console.log(err);
@@ -650,7 +650,21 @@ switch(Status){
         }
         else{
             console.log(result);
-            res.send("Match Lose");
+            db.query(
+              `update T_Players set inMatch = '0' where UserId = '${UserId}' and T_Id = "${T_Id}";`,
+              (err, result) => {
+                if (err) {
+                  console.log(err);
+                  res.status(400).send(err.sqlMessage);
+          
+                }
+                else{
+                    console.log(result);
+                    res.send("Match Lose");
+                }
+                
+              }
+            );
         }
         
       }
@@ -668,7 +682,7 @@ switch(Status){
         else{
             console.log(result);
             db.query(
-              `update T_Players set T_Points = T_Points + ${MatchPoints} where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points + ${MatchPoints} > 0;`,
+              `update T_Players set T_Points = T_Points + ${MatchPoints}, inMatch = '0' where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points + ${MatchPoints} > 0;`,
               (err, result) => {
                 if (err) {
                   console.log(err);
@@ -699,7 +713,7 @@ switch(Status){
         else{
             console.log(result);
             db.query(
-              `update T_Players set T_Points = T_Points - ${MatchPoints},T_Players.TotalMatches = T_Players.TotalMatches + 1 where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points - ${MatchPoints} > 0;`,
+              `update T_Players set T_Points = T_Points - ${MatchPoints},T_Players.TotalMatches = T_Players.TotalMatches + 1, inMatch = '1' where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points - ${MatchPoints} > 0;`,
               (err, result) => {
                 if (err) {
                   console.log(err);
@@ -730,7 +744,7 @@ switch(Status){
         else{
             console.log(result);
             db.query(
-              `update T_Players set T_Points = T_Points - ${MatchPoints},T_Players.TotalMatches = T_Players.TotalMatches + 1 where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points - ${MatchPoints} > 0;`,
+              `update T_Players set T_Points = T_Points - ${MatchPoints},T_Players.TotalMatches = T_Players.TotalMatches + 1, inMatch = '1' where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points - ${MatchPoints} > 0;`,
               (err, result) => {
                 if (err) {
                   console.log(err);
@@ -755,6 +769,73 @@ switch(Status){
 }
  
 
+  
+});
+app.get("/api/getPlayersRank", (req, res) => {
+  const T_Id = req.params.T_Id;
+  db.query(
+    `SELECT PlayerStats.*, UserDetails.*, rank() OVER ( order by Points desc ) AS 'dense_rank' FROM Chess.PlayerStats inner join UserDetails on UserDetails.UserId = PlayerStats.UserId;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          console.log(result);
+          res.send(result);
+      }
+      
+    }
+  );
+  
+});
+app.post("/api/UpdateUserName", (req, res) => {
+  const UserName = req.body.UserName;
+  const UserId = req.body.UserId;
+
+  
+
+
+  db.query(
+    `update UserDetails set UserName = "${UserName}" where UserId = "${UserId}";`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+      }
+      else{
+          console.log(result);
+          if(result.affectedRows === 0){
+            res.status(400).send(result.message);
+          }
+          else{
+            res.send("Succefully added to db");
+          }
+          
+      }
+      
+    }
+  );
+  
+});
+app.get("/api/getUserDetailsWithRank/:UserId", (req, res) => {
+  const UserId = req.params.UserId;
+  db.query(
+    `SELECT UserDetails.*, RankTable.* FROM Chess.UserDetails inner join (SELECT UserId, rank() OVER ( order by Points desc ) AS 'rank' FROM Chess.PlayerStats) as RankTable on RankTable.UserId = UserDetails.UserId where UserDetails.UserId = '${UserId}';`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          console.log(result);
+          res.send(result);
+      }
+      
+    }
+  );
   
 });
 
