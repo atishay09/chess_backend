@@ -771,6 +771,73 @@ switch(Status){
 
   
 });
+app.get("/api/getPlayersRank", (req, res) => {
+  const T_Id = req.params.T_Id;
+  db.query(
+    `SELECT PlayerStats.*, UserDetails.*, rank() OVER ( order by Points desc ) AS 'dense_rank' FROM Chess.PlayerStats inner join UserDetails on UserDetails.UserId = PlayerStats.UserId;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          console.log(result);
+          res.send(result);
+      }
+      
+    }
+  );
+  
+});
+app.post("/api/UpdateUserEmail", (req, res) => {
+  const Email = req.body.Email;
+  const UserId = req.body.UserId;
+
+  
+
+
+  db.query(
+    `update UserDetails set Email = "${Email}" where UserId = "${UserId}";`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+      }
+      else{
+          console.log(result);
+          if(result.affectedRows === 0){
+            res.status(400).send(result.message);
+          }
+          else{
+            res.send("Succefully added to db");
+          }
+          
+      }
+      
+    }
+  );
+  
+});
+app.get("/api/getUserDetailsWithRank/:UserId", (req, res) => {
+  const UserId = req.params.UserId;
+  db.query(
+    `SELECT UserDetails.*, RankTable.* FROM Chess.UserDetails inner join (SELECT UserId, rank() OVER ( order by Points desc ) AS 'rank' FROM Chess.PlayerStats) as RankTable on RankTable.UserId = UserDetails.UserId where UserDetails.UserId = '${UserId}';`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          console.log(result);
+          res.send(result);
+      }
+      
+    }
+  );
+  
+});
 
 app.listen(process.env.PORT || 4000, () => {
     console.log(`Example app listening at http://localhost: 4000`);
