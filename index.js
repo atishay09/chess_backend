@@ -790,15 +790,15 @@ app.get("/api/getPlayersRank", (req, res) => {
   );
   
 });
-app.post("/api/UpdateUserEmail", (req, res) => {
-  const Email = req.body.Email;
+app.post("/api/UpdateUserName", (req, res) => {
+  const UserName = req.body.UserName;
   const UserId = req.body.UserId;
 
   
 
 
   db.query(
-    `update UserDetails set Email = "${Email}" where UserId = "${UserId}";`,
+    `update UserDetails set UserName = "${UserName}" where UserId = "${UserId}";`,
     (err, result) => {
       if (err) {
         console.log(err);
