@@ -838,6 +838,125 @@ app.get("/api/getUserDetailsWithRank/:UserId", (req, res) => {
   );
   
 });
+app.get("/api/getTournamentRanking/:T_Id", (req, res) => {
+  const T_Id = req.params.T_Id;
+  db.query(
+    `SELECT T_Players.*, UserDetails.*  FROM Chess.T_Players inner join UserDetails on UserDetails.UserId = T_Players.UserId where T_Players.T_Id = "${T_Id}" order by T_Points desc;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          console.log(result);
+          res.send(result);
+      }
+      
+    }
+  );
+  
+});
+
+app.get("/api/allSync_CMS", (req, res) => {
+  const T_Id = req.params.T_Id;
+  var DailyChallenge;
+  var HomePageCMS;
+  var TournamentCMS;
+  var PlayOnlineCMS;
+  var ProfileCMS;
+  var finalRes = {};
+  db.query(
+    `SELECT * FROM Chess.DailyChallengesCMS;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          DailyChallenge = result;
+          console.log("Done");
+          finalRes['DailyChallenge'] = result;
+
+      }
+      
+    }
+  );
+  db.query(
+    `SELECT * FROM Chess.TournamentCMS;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          DailyChallenge = result;
+          console.log("Done");
+          finalRes['TournamentCMS'] = result;
+
+      }
+      
+    }
+  );
+  db.query(
+    `SELECT * FROM Chess.PlayOnlineCMS;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          DailyChallenge = result;
+          console.log("Done");
+          finalRes['PlayOnlineCMS'] = result;
+
+      }
+      
+    }
+  );
+  db.query(
+    `SELECT * FROM Chess.ProfileCMS;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          DailyChallenge = result;
+          console.log("Done");
+          finalRes['ProfileCMS'] = result;
+
+      }
+      
+    }
+  );
+  db.query(
+    `SELECT * FROM Chess.HomePageCMS;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          HomePageCMS = result;
+          console.log("Done here too");
+          finalRes['HomePageCMS'] = result;
+          console.log(finalRes);
+          res.send(finalRes);
+
+      }
+      
+    }
+  );
+  
+  
+  
+});
 
 app.listen(process.env.PORT || 4000, () => {
     console.log(`Example app listening at http://localhost: 4000`);
