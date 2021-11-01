@@ -11,8 +11,39 @@ app.use(bodyParser.json());
 
 app.use(cors());
 
+const path = require('path');
+const multer = require('multer');
+const logger = require('morgan');
+const serveIndex = require('serve-index')
+
+var storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, './public/uploads')
+    },
+    filename: (req, file, cb) => {
+        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname))
+    }
+});
+
+//will be using this for uplading
+const upload = multer({ storage: storage });
+
+//get the router
+
+app.use(logger('tiny'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+//app.use(express.static('public'));
+app.use('/ftp', express.static('public'), serveIndex('public', {'icons': true}));
+
 app.get('/', function(req,res) {
     return res.send("hello from my app express server!")
+})
+
+app.post('/userDPUpload', upload.single('file'), function(req,res) {
+    debug(req.file);
+    console.log('storage location is ', req.hostname +'/' + req.file.path);
+    return res.send(req.file);
 })
 
 app.post("/api/createUser", (req, res) => {
