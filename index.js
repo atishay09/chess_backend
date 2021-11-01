@@ -821,15 +821,17 @@ app.get("/api/getPlayersRank", (req, res) => {
   );
   
 });
-app.post("/api/UpdateUserName", (req, res) => {
+app.post("/api/UpdateUserDetails", (req, res) => {
   const UserName = req.body.UserName;
+  const DisplayImg = req.body.DisplayImg;
+  const Phone = req.body.Phone;
   const UserId = req.body.UserId;
 
   
 
-
+if(UserName && DisplayImg && Phone && UserId){
   db.query(
-    `update UserDetails set UserName = "${UserName}" where UserId = "${UserId}";`,
+    `update UserDetails set UserName = "${UserName}", DisplayImg ="${DisplayImg}", Phone = "${Phone}"  where UserId = "${UserId}";`,
     (err, result) => {
       if (err) {
         console.log(err);
@@ -848,6 +850,11 @@ app.post("/api/UpdateUserName", (req, res) => {
       
     }
   );
+}
+else{
+  res.status(400).send("Some fields missing");
+}
+  
   
 });
 app.get("/api/getUserDetailsWithRank/:UserId", (req, res) => {
