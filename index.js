@@ -11,8 +11,39 @@ app.use(bodyParser.json());
 
 app.use(cors());
 
+const path = require('path');
+const multer = require('multer');
+const logger = require('morgan');
+const serveIndex = require('serve-index')
+
+var storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, './public/uploads')
+    },
+    filename: (req, file, cb) => {
+        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname))
+    }
+});
+
+//will be using this for uplading
+const upload = multer({ storage: storage });
+
+//get the router
+
+app.use(logger('tiny'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+//app.use(express.static('public'));
+app.use('/ftp', express.static('public'), serveIndex('public', {'icons': true}));
+
 app.get('/', function(req,res) {
     return res.send("hello from my app express server!")
+})
+
+app.post('/userDPUpload', upload.single('file'), function(req,res) {
+    debug(req.file);
+    console.log('storage location is ', req.hostname +'/' + req.file.path);
+    return res.send(req.file);
 })
 
 app.post("/api/createUser", (req, res) => {
@@ -790,15 +821,17 @@ app.get("/api/getPlayersRank", (req, res) => {
   );
   
 });
-app.post("/api/UpdateUserName", (req, res) => {
+app.post("/api/UpdateUserDetails", (req, res) => {
   const UserName = req.body.UserName;
+  const DisplayImg = req.body.DisplayImg;
+  const Phone = req.body.Phone;
   const UserId = req.body.UserId;
 
   
 
-
+if(UserName && DisplayImg && Phone && UserId){
   db.query(
-    `update UserDetails set UserName = "${UserName}" where UserId = "${UserId}";`,
+    `update UserDetails set UserName = "${UserName}", DisplayImg ="${DisplayImg}", Phone = "${Phone}"  where UserId = "${UserId}";`,
     (err, result) => {
       if (err) {
         console.log(err);
@@ -817,6 +850,11 @@ app.post("/api/UpdateUserName", (req, res) => {
       
     }
   );
+}
+else{
+  res.status(400).send("Some fields missing");
+}
+  
   
 });
 app.get("/api/getUserDetailsWithRank/:UserId", (req, res) => {
@@ -836,6 +874,125 @@ app.get("/api/getUserDetailsWithRank/:UserId", (req, res) => {
       
     }
   );
+  
+});
+app.get("/api/getTournamentRanking/:T_Id", (req, res) => {
+  const T_Id = req.params.T_Id;
+  db.query(
+    `SELECT T_Players.*, UserDetails.*  FROM Chess.T_Players inner join UserDetails on UserDetails.UserId = T_Players.UserId where T_Players.T_Id = "${T_Id}" order by T_Points desc;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          console.log(result);
+          res.send(result);
+      }
+      
+    }
+  );
+  
+});
+
+app.get("/api/allSync_CMS", (req, res) => {
+  const T_Id = req.params.T_Id;
+  var DailyChallenge;
+  var HomePageCMS;
+  var TournamentCMS;
+  var PlayOnlineCMS;
+  var ProfileCMS;
+  var finalRes = {};
+  db.query(
+    `SELECT * FROM Chess.DailyChallengesCMS;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          DailyChallenge = result;
+          console.log("Done");
+          finalRes['DailyChallenge'] = result;
+
+      }
+      
+    }
+  );
+  db.query(
+    `SELECT * FROM Chess.TournamentCMS;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          DailyChallenge = result;
+          console.log("Done");
+          finalRes['TournamentCMS'] = result;
+
+      }
+      
+    }
+  );
+  db.query(
+    `SELECT * FROM Chess.PlayOnlineCMS;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          DailyChallenge = result;
+          console.log("Done");
+          finalRes['PlayOnlineCMS'] = result;
+
+      }
+      
+    }
+  );
+  db.query(
+    `SELECT * FROM Chess.ProfileCMS;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          DailyChallenge = result;
+          console.log("Done");
+          finalRes['ProfileCMS'] = result;
+
+      }
+      
+    }
+  );
+  db.query(
+    `SELECT * FROM Chess.HomePageCMS;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          HomePageCMS = result;
+          console.log("Done here too");
+          finalRes['HomePageCMS'] = result;
+          console.log(finalRes);
+          res.send(finalRes);
+
+      }
+      
+    }
+  );
+  
+  
   
 });
 
