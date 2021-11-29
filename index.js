@@ -896,8 +896,8 @@ app.get("/api/getTournamentRanking/:T_Id", (req, res) => {
   
 });
 
-app.get("/api/allSync_CMS", (req, res) => {
-  const T_Id = req.params.T_Id;
+app.get("/api/allSync_CMS/tenentId=:tenentId", (req, res) => {
+  const tenentId = req.params.tenentId;
   var DailyChallenge;
   var HomePageCMS;
   var TournamentCMS;
@@ -905,7 +905,7 @@ app.get("/api/allSync_CMS", (req, res) => {
   var ProfileCMS;
   var finalRes = {};
   db.query(
-    `SELECT * FROM Chess.DailyChallengesCMS;`,
+    `SELECT * FROM Chess.DailyChallengesCMS where tenentId = "${tenentId}";`,
     (err, result) => {
       if (err) {
         console.log(err);
@@ -922,7 +922,7 @@ app.get("/api/allSync_CMS", (req, res) => {
     }
   );
   db.query(
-    `SELECT * FROM Chess.TournamentCMS;`,
+    `SELECT * FROM Chess.TournamentCMS where tenentId = "${tenentId}";`,
     (err, result) => {
       if (err) {
         console.log(err);
@@ -939,7 +939,7 @@ app.get("/api/allSync_CMS", (req, res) => {
     }
   );
   db.query(
-    `SELECT * FROM Chess.PlayOnlineCMS;`,
+    `SELECT * FROM Chess.PlayOnlineCMS where tenentId = "${tenentId}";`,
     (err, result) => {
       if (err) {
         console.log(err);
@@ -956,7 +956,7 @@ app.get("/api/allSync_CMS", (req, res) => {
     }
   );
   db.query(
-    `SELECT * FROM Chess.ProfileCMS;`,
+    `SELECT * FROM Chess.ProfileCMS where tenentId = "${tenentId}";`,
     (err, result) => {
       if (err) {
         console.log(err);
@@ -973,7 +973,7 @@ app.get("/api/allSync_CMS", (req, res) => {
     }
   );
   db.query(
-    `SELECT * FROM Chess.HomePageCMS;`,
+    `SELECT * FROM Chess.HomePageCMS where tenentId = "${tenentId}";`,
     (err, result) => {
       if (err) {
         console.log(err);
@@ -992,6 +992,205 @@ app.get("/api/allSync_CMS", (req, res) => {
     }
   );
   
+  
+  
+});
+app.post("/api/DailyChallengeCMS", (req, res) => {
+  const scoreLogo = req.body.scoreLogo;
+  const textColor = req.body.textColor;
+  const bgColor = req.body.bgColor;
+  const backgroundImg = req.body.backgroundImg;
+  const DailyChallengesCMScol = req.body.DailyChallengesCMScol;
+  const tenentId = req.body.tenentId;
+
+  
+
+if(scoreLogo && textColor && bgColor && tenentId && backgroundImg && DailyChallengesCMScol){
+  db.query(
+    `update DailyChallengesCMS set scoreLogo = "${scoreLogo}", DailyChallengesCMScol = "${DailyChallengesCMScol}", backgroundImg = "${backgroundImg}", textColor ="${textColor}", bgColor = "${bgColor}"  where tenentId = "${tenentId}";`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+      }
+      else{
+          console.log(result);
+          if(result.affectedRows === 0){
+            res.status(400).send(result.message);
+          }
+          else{
+            res.send("Succefully added to db");
+          }
+          
+      }
+      
+    }
+  );
+}
+else{
+  res.status(400).send("Some fields missing");
+}
+  
+  
+});
+app.post("/api/TournamentCMS", (req, res) => {
+  const Title = req.body.Title;
+  const subHead = req.body.subHead;
+  const cardSlug = req.body.cardSlug;
+  const backgroundImg = req.body.backgroundImg;
+  const scoreIcon = req.body.scoreIcon;
+  const prizeImg = req.body.prizeImg;
+  const alertBg = req.body.alertBg;
+  const tenentId = req.body.tenentId;
+
+  
+
+if(Title && subHead && cardSlug && tenentId && backgroundImg && scoreIcon){
+  db.query(
+    `update TournamentCMS set Title = "${Title}", prizeImg ="${prizeImg}", alertBg = "${alertBg}", scoreIcon = "${scoreIcon}", backgroundImg = "${backgroundImg}", subHead ="${subHead}", cardSlug = "${cardSlug}"  where tenentId = "${tenentId}";`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+      }
+      else{
+          console.log(result);
+          if(result.affectedRows === 0){
+            res.status(400).send(result.message);
+          }
+          else{
+            res.send("Succefully added to db");
+          }
+          
+      }
+      
+    }
+  );
+}
+else{
+  res.status(400).send("Some fields missing");
+}
+  
+  
+});
+app.post("/api/PlayOnlineCMS", (req, res) => {
+  const bgColor = req.body.bgColor;
+  const textColor = req.body.textColor;
+  const shareCTA = req.body.shareCTA;
+  const backgroundImg = req.body.backgroundImg;
+  const createCTA = req.body.createCTA;
+  const alertBg = req.body.alertBg;
+  const hintCTA = req.body.hintCTA;
+  const tenentId = req.body.tenentId;
+
+  
+
+if(bgColor && textColor && shareCTA && tenentId && backgroundImg && createCTA && alertBg && hintCTA){
+  db.query(
+    `update PlayOnlineCMS set bgColor = "${bgColor}", hintCTA ="${hintCTA}", alertBg = "${alertBg}", createCTA = "${createCTA}", backgroundImg = "${backgroundImg}", textColor ="${textColor}", shareCTA = "${shareCTA}"  where tenentId = "${tenentId}";`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+      }
+      else{
+          console.log(result);
+          if(result.affectedRows === 0){
+            res.status(400).send(result.message);
+          }
+          else{
+            res.send("Succefully added to db");
+          }
+          
+      }
+      
+    }
+  );
+}
+else{
+  res.status(400).send("Some fields missing");
+}
+  
+  
+});
+app.post("/api/ProfileCMS", (req, res) => {
+  const bgColor = req.body.bgColor;
+  const textColor = req.body.textColor;
+  const subBgColor = req.body.subBgColor;
+  const backgroundImg = req.body.backgroundImg;
+  const logoutCTA = req.body.logoutCTA;
+  const leaderBoardImg = req.body.leaderBoardImg;
+  const editCTA = req.body.editCTA;
+  const defaultDP = req.body.defaultDP;
+  const tenentId = req.body.tenentId;
+
+  
+
+if(bgColor && textColor && subBgColor && tenentId && backgroundImg && logoutCTA && leaderBoardImg && editCTA){
+  db.query(
+    `update ProfileCMS set bgColor = "${bgColor}", defaultDP = "${defaultDP}", editCTA ="${editCTA}", leaderBoardImg = "${leaderBoardImg}", logoutCTA = "${logoutCTA}", backgroundImg = "${backgroundImg}", textColor ="${textColor}", subBgColor = "${subBgColor}"  where tenentId = "${tenentId}";`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+      }
+      else{
+          console.log(result);
+          if(result.affectedRows === 0){
+            res.status(400).send(result.message);
+          }
+          else{
+            res.send("Succefully added to db");
+          }
+          
+      }
+      
+    }
+  );
+}
+else{
+  res.status(400).send("Some fields missing");
+}
+  
+  
+});
+app.post("/api/HomePageCMS", (req, res) => {
+  const Logo = req.body.Logo;
+  const bgColor = req.body.bgColor;
+  const BackgroundImg = req.body.BackgroundImg;
+  const bgText = req.body.bgText;
+  const loginCTA = req.body.loginCTA;
+  const isSync = req.body.isSync;
+  const spinValues = req.body.spinValues;
+  const tenentId = req.body.tenentId;
+
+  
+
+if(Logo && bgColor && tenentId && BackgroundImg && bgText && loginCTA && isSync && spinValues){
+  db.query(
+    `update HomePageCMS set Logo = "${Logo}", spinValues = "${spinValues}", isSync ="${isSync}", loginCTA = "${loginCTA}", bgText = "${bgText}", BackgroundImg = "${BackgroundImg}", bgColor ="${bgColor}"  where tenentId = "${tenentId}";`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+      }
+      else{
+          console.log(result);
+          if(result.affectedRows === 0){
+            res.status(400).send(result.message);
+          }
+          else{
+            res.send("Succefully added to db");
+          }
+          
+      }
+      
+    }
+  );
+}
+else{
+  res.status(400).send("Some fields missing");
+}
   
   
 });
