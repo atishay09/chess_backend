@@ -291,6 +291,7 @@ app.post("/api/createStats", (req, res) => {
   const UserId = req.body.UserId;
   const Status = req.body.Status;  
   const MatchPoints = req.body.MatchPoints; 
+  const TimeStamp = new Date().valueOf();
   
 switch(Status){
   case 'Won':
@@ -315,6 +316,37 @@ switch(Status){
                 else{
                     console.log(result);
                     res.send("Match Won");
+                }
+                
+              }
+            );
+        }
+        
+      }
+    );
+    break;
+  case 'spinwin':
+    db.query(
+      `insert into Logs (UserId,Logs.SpinWin,TimeStamp) values ('${UserId}','1','${TimeStamp}'); `,
+      (err, result) => {
+        if (err) {
+          console.log(err);
+          res.status(400).send(err.sqlMessage);
+    
+        }
+        else{
+            console.log(result);
+            db.query(
+              `update PlayerStats set Points = Points + ${MatchPoints} where UserId = '${UserId}' and Points + ${MatchPoints} > 0;`,
+              (err, result) => {
+                if (err) {
+                  console.log(err);
+                  res.status(400).send(err.sqlMessage);
+          
+                }
+                else{
+                    console.log(result);
+                    res.send("Spin Win done");
                 }
                 
               }
@@ -435,7 +467,7 @@ switch(Status){
     );
     break;
   default:
-    res.status(400).send("Invalid Query, try 'Match','Join','Drawn','Lose','Won' ")
+    res.status(400).send("Invalid Query, try 'Match','Join','Drawn','Lose','Won','spinwin' ")
   
 }
  
@@ -876,6 +908,7 @@ app.get("/api/getUserDetailsWithRank/:UserId", (req, res) => {
   );
   
 });
+
 app.get("/api/getTournamentRanking/:T_Id", (req, res) => {
   const T_Id = req.params.T_Id;
   db.query(
@@ -1194,7 +1227,59 @@ else{
   
   
 });
+app.post("/api/UpdateSpinWin", (req, res) => {
+  const Timestamp = req.body.Timestamp;
+  const UserId = req.body.UserId;
 
+  
+
+if(Timestamp && UserId){
+  db.query(
+    `update UserDetails set spinWin = "${Timestamp}" where UserId = "${UserId}";`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+      }
+      else{
+          console.log(result);
+          if(result.affectedRows === 0){
+            res.status(400).send(result.message);
+          }
+          else{
+            res.send("Succefully added to db");
+          }
+          
+      }
+      
+    }
+  );
+}
+else{
+  res.status(400).send("Some fields missing");
+}
+  
+  
+});
+app.get("/api/getSpinWinHistory/userId=:UserId", (req, res) => {
+  const UserId = req.params.UserId;
+  db.query(
+    `SELECT UserId, Id, SpinWin, timestamp FROM Chess.Logs where UserId = "${UserId}" and SpinWin = 1;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          console.log(result);
+          res.send(result);
+      }
+      
+    }
+  );
+  
+});
 app.listen(process.env.PORT || 4000, () => {
     console.log(`Example app listening at http://localhost: 4000`);
   });
