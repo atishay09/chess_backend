@@ -669,6 +669,8 @@ app.post("/api/createTournamentStats", (req, res) => {
   const T_Id = req.body.T_Id;
   const Status = req.body.Status;  
   const MatchPoints = req.body.MatchPoints; 
+  const Timestamp =new Date().valueOf();
+  const reqUserId = req.body.reqUserId;
   
 switch(Status){
   case 'Won':
@@ -790,6 +792,21 @@ switch(Status){
                 
               }
             );
+
+            db.query(
+              `insert into Requests (UserId,TimeStamp, T_Id, Status) values ('${reqUserId}','${Timestamp}','${T_Id}','Join Request');`,
+              (err, result) => {
+                if (err) {
+                  console.log(err);
+                  res.status(400).send(err.sqlMessage);
+          
+                }
+                else{
+                    console.log(result);
+                }
+                
+              }
+            );
         }
         
       }
@@ -821,13 +838,44 @@ switch(Status){
                 
               }
             );
+            db.query(
+              `update Requests set Status = "Joining" where UserId = "${UserId}" and T_Id = "${T_Id}";`,
+              (err, result) => {
+                if (err) {
+                  console.log(err);
+                  res.status(400).send(err.sqlMessage);
+          
+                }
+                else{
+                    console.log(result);
+                }
+                
+              }
+            );
+        }
+        
+      }
+    );
+    break;
+  case 'Decline':
+    db.query(
+      `update Requests set Status = "Declined" where UserId = "${UserId}" and T_Id = "${T_Id}";`,
+      (err, result) => {
+        if (err) {
+          console.log(err);
+          res.status(400).send(err.sqlMessage);
+  
+        }
+        else{
+            console.log(result);
+            res.send("Match Declined");
         }
         
       }
     );
     break;
   default:
-    res.status(400).send("Invalid Query, try 'Match','Join','Drawn','Lose','Won' ")
+    res.status(400).send("Invalid Query, try 'Match','Join','Drawn','Lose','Won','Decline' ")
   
 }
  
@@ -838,6 +886,26 @@ app.get("/api/getPlayersRank", (req, res) => {
   const T_Id = req.params.T_Id;
   db.query(
     `SELECT PlayerStats.*, UserDetails.*, rank() OVER ( order by Points desc ) AS 'dense_rank' FROM Chess.PlayerStats inner join UserDetails on UserDetails.UserId = PlayerStats.UserId;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          console.log(result);
+          res.send(result);
+      }
+      
+    }
+  );
+  
+});
+app.get("/api/getRequestStatus/UserId=:UserId/T_Id=:T_Id", (req, res) => {
+  const T_Id = req.params.T_Id;
+  const UserId = req.params.UserId;
+  db.query(
+    `SELECT * FROM Chess.Requests where UserId = "${UserId}" and T_Id = "${T_Id}";`,
     (err, result) => {
       if (err) {
         console.log(err);
