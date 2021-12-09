@@ -1348,6 +1348,32 @@ app.get("/api/getSpinWinHistory/userId=:UserId", (req, res) => {
   );
   
 });
+app.post("/api/createPuzzleGames", (req, res) => {
+  const GameId = new Date().valueOf();
+  const Fen = req.body.Fen;
+  const Pgn = req.body.Pgn;
+
+
+  
+
+
+  db.query(
+    `insert into Game_collections (GameId,Fen,Pgn) values ('${GameId}', '${Fen}', '${Pgn}');`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+
+      }
+      else{
+          console.log(result);
+          res.send("Succefully added to db");
+      }
+      
+    }
+  );
+  
+});
 app.listen(process.env.PORT || 4000, () => {
     console.log(`Example app listening at http://localhost: 4000`);
   });
