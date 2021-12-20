@@ -809,7 +809,7 @@ app.get("/api/getUserDetailsWithRank/:UserId", (req, res) => {
 app.get("/api/getTournamentRanking/:T_Id", (req, res) => {
   const T_Id = req.params.T_Id;
   db.query(
-    `SELECT T_Players.*, UserDetails.*, rank() OVER ( order by T_Points desc ) AS 'dense_rank' FROM Chess.T_Players inner join UserDetails on UserDetails.UserId = T_Players.UserId where T_Players.T_Id = "test" order by T_Points desc;`,
+    `SELECT T_Players.*, UserDetails.*, rank() OVER ( order by T_Points desc ) AS 'dense_rank' FROM Chess.T_Players inner join UserDetails on UserDetails.UserId = T_Players.UserId where T_Players.T_Id = "${T_Id}" order by T_Points desc;`,
     (err, result) => {
       if (err) {
         console.log(err);
