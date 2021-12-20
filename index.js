@@ -1176,12 +1176,13 @@ app.post("/register", async (req, res) => {
     UserId = UserId.split('@');
     UserId = UserId[0].concat(TimeStamp)
     console.log(UserId);
-    var encryptedPassword = await bcrypt.hash(password, 10);
+   
 
     // Validate user input
     if (!(Email && password && UserId && UserName && DisplayImg)) {
       res.status(400).send("All input is required");
     } else {
+      var encryptedPassword = await bcrypt.hash(password, 10);
       var oldUser = false;
       db.query(
         `SELECT * FROM Chess.UserDetails where Email = "${Email}";`,
@@ -1272,7 +1273,7 @@ app.post("/login", (req, res) => {
       (err, result) => {
         if (err) {
           console.log(err);
-          res.status(400).send(err.sqlMessage);
+          res.status(400).send(err.sqlMessage) ;
         } else {
           console.log(result.length);
           if (Array.isArray(result) && result.length) {
