@@ -8,7 +8,7 @@ const debug = require("debug")("myapp:server");
 const cors = require("cors");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-
+const nodemailer = require("nodemailer")
 app.use(cors());
 const bcrypt = require("bcryptjs");
 
@@ -1301,6 +1301,70 @@ app.post("/login", (req, res) => {
 async function  compare (givenpass, accpass){
     return await bcrypt.compare(givenpass, accpass);
   }
+
+  function getPin() {
+    let pin = Math.round(Math.random() * 10000);
+    let pinStr = pin + '';
+
+    // make sure that number is 4 digit
+    if (pinStr.length == 4) {
+        return pinStr;
+       } else {
+        return getPin();
+       }
+    }
+  app.post("/api/requestFpOtp", (req, res) => {
+    const Email = req.body.Email;
+   let pin = getPin();
+    if (Email) {
+      db.query(
+        `update UserDetails set otp = '${pin}' where Email = "${Email}";`,
+        (err, result) => {
+          if (err) {
+            console.log(err);
+            res.status(400).send(err.sqlMessage);
+          } else {
+            console.log(result);
+            if (result.affectedRows === 0) {
+              res.status(400).send("No users found please sign up!");
+            } else {
+             
+                const transport = nodemailer.createTransport({
+                  service: "gmail",
+                  auth: {
+                    user: "sociophin.services@gmail.com",
+                    pass: process.env.EMAILPASS
+                  }
+                })
+
+                 transport.sendMail({
+                  from: "Chess Services<anish2000.ad@gmail.com>",
+                  to: Email,
+                  subject: "Forget Password",
+                  html: `<div className="email" style="
+                      border: 1px solid black;
+                      padding: 20px;
+                      font-family: sans-serif;
+                      line-height: 2;
+                      font-size: 20px; 
+                      ">
+                      <h2>Here is your OTP!</h2>
+                      <p>${pin}</p>
+                  
+                      <p>Chess Game</p>
+                      </div>
+                  `
+                })
+
+                res.send('Email Sent');
+            }
+          }
+        }
+      );
+    } else {
+      res.status(400).send("Some fields missing");
+    }
+  });
 
 app.listen(process.env.PORT || 4000, () => {
   console.log(`Example app listening at http://localhost: 4000`);
