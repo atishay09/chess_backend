@@ -1298,6 +1298,68 @@ app.post("/login", (req, res) => {
 
   // Our register logic ends here
 });
+
+app.post("/api/updatePassword",async (req, res) => {
+  const otp = req.body.otp;
+  const password = req.body.password;
+  const Email = req.body.Email;
+
+  if (otp && Email && password) {
+    var encryptedPassword = await bcrypt.hash(password, 10);
+    db.query(
+      `SELECT * FROM Chess.UserDetails where Email="${Email}";`,
+      (err, result) => {
+        if (err) {
+          console.log(err);
+          res.status(400).send(err.sqlMessage);
+        } else {
+          console.log(result[0]["otp"]);
+          if(result[0]["otp"] == otp){
+             db.query(
+              `update UserDetails set password = "${encryptedPassword}" where Email = "${Email}";`,
+              (err, result) => {
+                if (err) {
+                  console.log(err);
+                  res.status(400).send(err.sqlMessage);
+                } else {
+                  console.log(result);
+                  if (result.affectedRows === 0) {
+                    res.status(400).send(result.message);
+                  } else {
+                    db.query(
+                      `update UserDetails set otp = null where Email = "${Email}";`,
+                      (err, result) => {
+                        if (err) {
+                          console.log(err);
+                          res.status(400).send(err.sqlMessage);
+                        } else {
+                          console.log(result);
+                          if (result.affectedRows === 0) {
+                            res.status(400).send(result.message);
+                          } else {
+                            res.send("Password updated");
+                          }
+                        }
+                      }
+                    );
+                  }
+                }
+              }
+            );
+             
+          }
+          else{
+            res.status(400).send("Otp incorrect");
+          }
+          
+        }
+      }
+    );
+   
+  } else {
+    res.status(400).send("Some fields missing");
+  }
+});
 async function  compare (givenpass, accpass){
     return await bcrypt.compare(givenpass, accpass);
   }
@@ -1357,6 +1419,31 @@ async function  compare (givenpass, accpass){
                 })
 
                 res.send('Email Sent');
+            }
+          }
+        }
+      );
+    } else {
+      res.status(400).send("Some fields missing");
+    }
+  });
+
+  app.post("/api/deleteTournament", (req, res) => {
+    const T_Id = req.body.T_Id;
+  
+    if (T_Id) {
+      db.query(
+        `delete from Tournaments where T_Id = "${T_Id}"`,
+        (err, result) => {
+          if (err) {
+            console.log(err);
+            res.status(400).send(err.sqlMessage);
+          } else {
+            console.log(result);
+            if (result.affectedRows === 0) {
+              res.status(400).send(result.message);
+            } else {
+              res.send("Succefully deleted");
             }
           }
         }
