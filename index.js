@@ -646,6 +646,7 @@ app.post("/api/createTournamentStats", (req, res) => {
             res.status(400).send(err.sqlMessage);
           } else {
             console.log(result);
+            console.log(`update T_Players set T_Points = T_Points - ${MatchPoints},T_Players.TotalMatches = T_Players.TotalMatches + 1, inMatch = '1' where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points - ${MatchPoints} > 0;`);
             db.query(
               `update T_Players set T_Points = T_Points - ${MatchPoints},T_Players.TotalMatches = T_Players.TotalMatches + 1, inMatch = '1' where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points - ${MatchPoints} > 0;`,
               (err, result) => {
@@ -654,7 +655,7 @@ app.post("/api/createTournamentStats", (req, res) => {
                   res.status(400).send(err.sqlMessage);
                 } else {
                   console.log(result);
-                  res.send("Match Started");
+                  res.send("Match Started hello");
                 }
               }
             );
