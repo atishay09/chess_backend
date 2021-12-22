@@ -559,7 +559,8 @@ app.post("/api/createTournamentStats", (req, res) => {
   const Status = req.body.Status;
   const MatchPoints = req.body.MatchPoints;
   const Timestamp = new Date().valueOf();
-  const reqUserId = req.body.reqUserId;
+  const ReqTimeStamp = req.body.ReqTimeStamp;
+  const T = req.body.T;
 
   switch (Status) {
     case "Won":
@@ -692,7 +693,12 @@ app.post("/api/createTournamentStats", (req, res) => {
                   res.status(400).send(err.sqlMessage);
                 } else {
                   console.log(result);
-                  res.send("Match Joined");
+                  if(result.affectedRows === 0){
+                    res.status(400).send("No rows found");
+                  }
+                  else{
+                       res.send("Match Joined");
+                  }
                 }
               }
             );
@@ -713,14 +719,20 @@ app.post("/api/createTournamentStats", (req, res) => {
       break;
     case "Decline":
       db.query(
-        `delete from Requests UserId = "${UserId}" and T_Id = "${T_Id}";`,
+        `delete from Requests where UserId = "${UserId}" and T_Id = "${T_Id}" and TimeStamp = "${ReqTimeStamp}";`,
         (err, result) => {
           if (err) {
             console.log(err);
             res.status(400).send(err.sqlMessage);
           } else {
             console.log(result);
-            res.send("Match Declined");
+            if(result.affectedRows === 0){
+              res.status(400).send("No rows found");
+            }
+            else{
+                 res.send("Match Declined");
+            }
+         
           }
         }
       );
