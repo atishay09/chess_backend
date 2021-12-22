@@ -697,7 +697,7 @@ app.post("/api/createTournamentStats", (req, res) => {
               }
             );
             db.query(
-              `update Requests set Status = "Joining" where UserId = "${UserId}" and T_Id = "${T_Id}";`,
+              `delete from Requests where UserId = "${UserId}" and T_Id = "${T_Id}";`,
               (err, result) => {
                 if (err) {
                   console.log(err);
@@ -713,7 +713,7 @@ app.post("/api/createTournamentStats", (req, res) => {
       break;
     case "Decline":
       db.query(
-        `update Requests set Status = "Declined" where UserId = "${UserId}" and T_Id = "${T_Id}";`,
+        `delete from Requests UserId = "${UserId}" and T_Id = "${T_Id}";`,
         (err, result) => {
           if (err) {
             console.log(err);
