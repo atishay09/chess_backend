@@ -1465,6 +1465,96 @@ async function  compare (givenpass, accpass){
       res.status(400).send("Some fields missing");
     }
   });
+  app.get("/api/getTRoomId/T_Id=:T_Id", (req, res) => {
+    const T_Id = req.params.T_Id;
+    const TimeStamp = new Date().valueOf();
+  
+    if (T_Id) {
+      db.query(
+        `SELECT * FROM Chess.T_Rooms where T_Id = ${T_Id} and  Status="Waiting" and Count<2;`,
+        (err, result) => {
+          if (err) {
+            console.log(err);
+            res.status(400).send(err.sqlMessage);
+          } else {
+            console.log(result);
+            if(result && result.length > 0){
+              res.send(result);
+              db.query(
+                `update T_Rooms set Status="Full" , Count=Count+1 where T_Id="${T_Id}" and  Status="Waiting"`,
+                (err, result) => {
+                  if (err) {
+                    console.log(err);
+                  } else {
+                    console.log(result);                    
+                  }
+                }
+              );
+              
+            }
+            else{
+              db.query(
+                `insert into T_Rooms (T_Id, TimeStamp, Status, Count) values("${T_Id}", "${TimeStamp}", "Waiting", 1)`,
+                (err, result) => {
+                  if (err) {
+                    console.log(err);
+                    res.status(400).send(err.sqlMessage);
+                  } else {
+                    console.log(result);
+                    if (result.affectedRows === 0) {
+                      res.status(400).send(result.message);
+                    } else {
+                      db.query(
+                        `SELECT * FROM Chess.T_Rooms where T_Id="${T_Id}" and Status="Waiting";`,
+                        (err, result) => {
+                          if (err) {
+                            console.log(err);
+                            res.status(400).send(err.sqlMessage);
+                          } else {
+                            
+                              res.send(result);
+                            
+                          }
+                        }
+                      );
+                    }
+                  }
+                }
+              );
+            }
+            
+              
+            
+          }
+        }
+      );
+    } else {
+      res.status(400).send("Some fields missing");
+    }
+  });
+  app.post("/api/deleteTRoomId", (req, res) => {
+    const T_Id = req.body.T_Id;
+  
+    if (T_Id) {
+      db.query(
+        `update T_Rooms set Status="Full" , Count=Count+1 where T_Id="${T_Id}" and  Status="Waiting"`,
+        (err, result) => {
+          if (err) {
+            console.log(err);
+          } else {
+            if(result.affectedRows === 0){
+              res.status(400).send("No rows found");
+            }
+            else{
+                 res.send("Deleted Room");
+            }                  
+          }
+        }
+      );
+    } else {
+      res.status(400).send("Some fields missing");
+    }
+  });
 
 app.listen(process.env.PORT || 4000, () => {
   console.log(`Example app listening at http://localhost: 4000`);
