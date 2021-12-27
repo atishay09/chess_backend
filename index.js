@@ -11,6 +11,7 @@ app.use(bodyParser.json());
 const nodemailer = require("nodemailer")
 app.use(cors());
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const path = require("path");
 const multer = require("multer");
@@ -87,9 +88,30 @@ app.post("/api/createUser", (req, res) => {
   );
 });
 
-app.get("/api/getUserDetails/:UserId", (req, res) => {
+async function  verifyToken(token) {
+  try {
+    const decoded = jwt.verify(token, process.env.TOKEN_KEY);
+    return true;
+  
+  } catch (err) {
+    return false;
+  }  
+
+}
+
+app.get("/api/getUserDetails/:UserId", async (req, res) => {
   const UserId = req.params.UserId;
-  db.query(
+  const token = req.headers["x-access-token"];
+  // console.log(jwt.verify(token, process.env.TOKEN_KEY));
+  // try {
+  //   const decoded = jwt.verify(token, config.TOKEN_KEY);
+  
+  // } catch (err) {
+  //   return res.status(401).send("Invalid Token");
+  // }
+  console.log();
+  if(await verifyToken(token)){
+db.query(
     `SELECT UserDetails.*, PlayerStats.* from UserDetails inner join PlayerStats on PlayerStats.UserId = UserDetails.UserId where UserDetails.UserId = '${UserId}';`,
     (err, result) => {
       if (err) {
@@ -101,6 +123,11 @@ app.get("/api/getUserDetails/:UserId", (req, res) => {
       }
     }
   );
+  }
+  else{
+    res.status(400).send("Invalid Token")
+  }
+  
 });
 
 app.post("/api/createUserStats", (req, res) => {
@@ -1292,6 +1319,14 @@ app.post("/login", (req, res) => {
           if (Array.isArray(result) && result.length) {
             console.log(bcrypt.compareSync(password, result[0]["password"]));
             if(bcrypt.compareSync(password, result[0]["password"])){
+              const token = jwt.sign(
+                { user_id: result[0]["UserId"], Email },
+                process.env.TOKEN_KEY,
+                {
+                  expiresIn: "2h",
+                }
+              );
+              result[0]["token"] = token;
               res.status(200).send(result);
             }
             else{
