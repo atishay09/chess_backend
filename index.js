@@ -11,11 +11,15 @@ app.use(bodyParser.json());
 const nodemailer = require("nodemailer")
 app.use(cors());
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const path = require("path");
 const multer = require("multer");
 const logger = require("morgan");
 const serveIndex = require("serve-index");
+
+const auth = require("./middleware/auth");
+
 
 var storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -87,9 +91,21 @@ app.post("/api/createUser", (req, res) => {
   );
 });
 
-app.get("/api/getUserDetails/:UserId", (req, res) => {
+
+
+app.get("/api/getUserDetails/:UserId", auth, (req, res) => {
   const UserId = req.params.UserId;
-  db.query(
+  const token = req.headers["x-access-token"];
+  // console.log(jwt.verify(token, process.env.TOKEN_KEY));
+  // try {
+  //   const decoded = jwt.verify(token, config.TOKEN_KEY);
+  
+  // } catch (err) {
+  //   return res.status(401).send("Invalid Token");
+  // }
+  console.log();
+  // if(await verifyToken(token)){
+db.query(
     `SELECT UserDetails.*, PlayerStats.* from UserDetails inner join PlayerStats on PlayerStats.UserId = UserDetails.UserId where UserDetails.UserId = '${UserId}';`,
     (err, result) => {
       if (err) {
@@ -101,6 +117,11 @@ app.get("/api/getUserDetails/:UserId", (req, res) => {
       }
     }
   );
+  // }
+  // else{
+  //   res.status(400).send("Invalid Token")
+  // }
+  
 });
 
 app.post("/api/createUserStats", (req, res) => {
@@ -559,7 +580,8 @@ app.post("/api/createTournamentStats", (req, res) => {
   const Status = req.body.Status;
   const MatchPoints = req.body.MatchPoints;
   const Timestamp = new Date().valueOf();
-  const reqUserId = req.body.reqUserId;
+  const ReqTimeStamp = req.body.ReqTimeStamp;
+  const T = req.body.T;
 
   switch (Status) {
     case "Won":
@@ -646,6 +668,7 @@ app.post("/api/createTournamentStats", (req, res) => {
             res.status(400).send(err.sqlMessage);
           } else {
             console.log(result);
+            console.log(`update T_Players set T_Points = T_Points - ${MatchPoints},T_Players.TotalMatches = T_Players.TotalMatches + 1, inMatch = '1' where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points - ${MatchPoints} > 0;`);
             db.query(
               `update T_Players set T_Points = T_Points - ${MatchPoints},T_Players.TotalMatches = T_Players.TotalMatches + 1, inMatch = '1' where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points - ${MatchPoints} > 0;`,
               (err, result) => {
@@ -654,7 +677,7 @@ app.post("/api/createTournamentStats", (req, res) => {
                   res.status(400).send(err.sqlMessage);
                 } else {
                   console.log(result);
-                  res.send("Match Started");
+                  res.send("Match Started hello");
                 }
               }
             );
@@ -691,12 +714,17 @@ app.post("/api/createTournamentStats", (req, res) => {
                   res.status(400).send(err.sqlMessage);
                 } else {
                   console.log(result);
-                  res.send("Match Joined");
+                  if(result.affectedRows === 0){
+                    res.status(400).send("No rows found");
+                  }
+                  else{
+                       res.send("Match Joined");
+                  }
                 }
               }
             );
             db.query(
-              `update Requests set Status = "Joining" where UserId = "${UserId}" and T_Id = "${T_Id}";`,
+              `delete from Requests where UserId = "${UserId}" and T_Id = "${T_Id}";`,
               (err, result) => {
                 if (err) {
                   console.log(err);
@@ -712,14 +740,20 @@ app.post("/api/createTournamentStats", (req, res) => {
       break;
     case "Decline":
       db.query(
-        `update Requests set Status = "Declined" where UserId = "${UserId}" and T_Id = "${T_Id}";`,
+        `delete from Requests where UserId = "${UserId}" and T_Id = "${T_Id}" and TimeStamp = "${ReqTimeStamp}";`,
         (err, result) => {
           if (err) {
             console.log(err);
             res.status(400).send(err.sqlMessage);
           } else {
             console.log(result);
-            res.send("Match Declined");
+            if(result.affectedRows === 0){
+              res.status(400).send("No rows found");
+            }
+            else{
+                 res.send("Match Declined");
+            }
+         
           }
         }
       );
@@ -1279,6 +1313,14 @@ app.post("/login", (req, res) => {
           if (Array.isArray(result) && result.length) {
             console.log(bcrypt.compareSync(password, result[0]["password"]));
             if(bcrypt.compareSync(password, result[0]["password"])){
+              const token = jwt.sign(
+                { user_id: result[0]["UserId"], Email },
+                process.env.TOKEN_KEY,
+                {
+                  expiresIn: "2h",
+                }
+              );
+              result[0]["token"] = token;
               res.status(200).send(result);
             }
             else{
@@ -1445,6 +1487,96 @@ async function  compare (givenpass, accpass){
             } else {
               res.send("Succefully deleted");
             }
+          }
+        }
+      );
+    } else {
+      res.status(400).send("Some fields missing");
+    }
+  });
+  app.get("/api/getTRoomId/T_Id=:T_Id", (req, res) => {
+    const T_Id = req.params.T_Id;
+    const TimeStamp = new Date().valueOf();
+  
+    if (T_Id) {
+      db.query(
+        `SELECT * FROM Chess.T_Rooms where T_Id = ${T_Id} and  Status="Waiting" and Count<2;`,
+        (err, result) => {
+          if (err) {
+            console.log(err);
+            res.status(400).send(err.sqlMessage);
+          } else {
+            console.log(result);
+            if(result && result.length > 0){
+              res.send(result);
+              db.query(
+                `update T_Rooms set Status="Full" , Count=Count+1 where T_Id="${T_Id}" and  Status="Waiting"`,
+                (err, result) => {
+                  if (err) {
+                    console.log(err);
+                  } else {
+                    console.log(result);                    
+                  }
+                }
+              );
+              
+            }
+            else{
+              db.query(
+                `insert into T_Rooms (T_Id, TimeStamp, Status, Count) values("${T_Id}", "${TimeStamp}", "Waiting", 1)`,
+                (err, result) => {
+                  if (err) {
+                    console.log(err);
+                    res.status(400).send(err.sqlMessage);
+                  } else {
+                    console.log(result);
+                    if (result.affectedRows === 0) {
+                      res.status(400).send(result.message);
+                    } else {
+                      db.query(
+                        `SELECT * FROM Chess.T_Rooms where T_Id="${T_Id}" and Status="Waiting";`,
+                        (err, result) => {
+                          if (err) {
+                            console.log(err);
+                            res.status(400).send(err.sqlMessage);
+                          } else {
+                            
+                              res.send(result);
+                            
+                          }
+                        }
+                      );
+                    }
+                  }
+                }
+              );
+            }
+            
+              
+            
+          }
+        }
+      );
+    } else {
+      res.status(400).send("Some fields missing");
+    }
+  });
+  app.post("/api/deleteTRoomId", (req, res) => {
+    const T_Id = req.body.T_Id;
+  
+    if (T_Id) {
+      db.query(
+        `update T_Rooms set Status="Full" , Count=Count+1 where T_Id="${T_Id}" and  Status="Waiting"`,
+        (err, result) => {
+          if (err) {
+            console.log(err);
+          } else {
+            if(result.affectedRows === 0){
+              res.status(400).send("No rows found");
+            }
+            else{
+                 res.send("Deleted Room");
+            }                  
           }
         }
       );
