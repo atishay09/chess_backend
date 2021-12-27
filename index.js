@@ -18,6 +18,9 @@ const multer = require("multer");
 const logger = require("morgan");
 const serveIndex = require("serve-index");
 
+const auth = require("./middleware/auth");
+
+
 var storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "./public/uploads");
@@ -88,18 +91,9 @@ app.post("/api/createUser", (req, res) => {
   );
 });
 
-async function  verifyToken(token) {
-  try {
-    const decoded = jwt.verify(token, process.env.TOKEN_KEY);
-    return true;
-  
-  } catch (err) {
-    return false;
-  }  
 
-}
 
-app.get("/api/getUserDetails/:UserId", async (req, res) => {
+app.get("/api/getUserDetails/:UserId", auth, (req, res) => {
   const UserId = req.params.UserId;
   const token = req.headers["x-access-token"];
   // console.log(jwt.verify(token, process.env.TOKEN_KEY));
@@ -110,7 +104,7 @@ app.get("/api/getUserDetails/:UserId", async (req, res) => {
   //   return res.status(401).send("Invalid Token");
   // }
   console.log();
-  if(await verifyToken(token)){
+  // if(await verifyToken(token)){
 db.query(
     `SELECT UserDetails.*, PlayerStats.* from UserDetails inner join PlayerStats on PlayerStats.UserId = UserDetails.UserId where UserDetails.UserId = '${UserId}';`,
     (err, result) => {
@@ -123,10 +117,10 @@ db.query(
       }
     }
   );
-  }
-  else{
-    res.status(400).send("Invalid Token")
-  }
+  // }
+  // else{
+  //   res.status(400).send("Invalid Token")
+  // }
   
 });
 
