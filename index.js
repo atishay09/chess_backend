@@ -94,33 +94,20 @@ app.post("/api/createUser", (req, res) => {
 
 
 app.get("/api/getUserDetails/:UserId", auth, (req, res) => {
-  const UserId = req.params.UserId;
-  const token = req.headers["x-access-token"];
-  // console.log(jwt.verify(token, process.env.TOKEN_KEY));
-  // try {
-  //   const decoded = jwt.verify(token, config.TOKEN_KEY);
-  
-  // } catch (err) {
-  //   return res.status(401).send("Invalid Token");
-  // }
-  console.log();
-  // if(await verifyToken(token)){
+  const UserId = req.query.UserId;
+
 db.query(
-    `SELECT UserDetails.*, PlayerStats.* from UserDetails inner join PlayerStats on PlayerStats.UserId = UserDetails.UserId where UserDetails.UserId = '${UserId}';`,
+    `SELECT UserDetails.*, PlayerStats.* from UserDetails inner join PlayerStats on PlayerStats.UserId = UserDetails.UserId where UserDetails.UserId = '${req.user.user_id}';`,
     (err, result) => {
       if (err) {
         console.log(err);
         res.status(400).send(err.sqlMessage);
       } else {
-        console.log(result);
         res.send(result);
       }
     }
   );
-  // }
-  // else{
-  //   res.status(400).send("Invalid Token")
-  // }
+ 
   
 });
 
@@ -1317,7 +1304,7 @@ app.post("/login", (req, res) => {
                 { user_id: result[0]["UserId"], Email },
                 process.env.TOKEN_KEY,
                 {
-                  expiresIn: "2h",
+                  expiresIn: "48h",
                 }
               );
               result[0]["token"] = token;
