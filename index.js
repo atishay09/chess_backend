@@ -466,10 +466,33 @@ app.post("/api/createTournamentPlayers", (req, res) => {
         res.status(400).send(err.sqlMessage);
       } else {
         console.log(result);
-        res.send("Succefully added to db");
+        db.query(
+          `insert into Logs (UserId,Logs.Match) values ('${UserId}','1'); `,
+          (err, result) => {
+            if (err) {
+              console.log(err);
+              res.status(400).send(err.sqlMessage);
+            } else {
+              console.log(result);
+              db.query(
+                `update PlayerStats set Points = Points - ${T_Points} where UserId = '${UserId}' and Points - ${T_Points} > 0;`,
+                (err, result) => {
+                  if (err) {
+                    console.log(err);
+                    res.status(400).send(err.sqlMessage);
+                  } else {
+                    console.log(result);
+                    res.send("Match Joined");
+                  }
+                }
+              );
+            }
+          }
+        );
       }
     }
   );
+  
 });
 
 app.get("/api/getRoomId", (req, res) => {
@@ -657,7 +680,7 @@ app.post("/api/createTournamentStats", (req, res) => {
             console.log(result);
             console.log(`update T_Players set T_Points = T_Points - ${MatchPoints},T_Players.TotalMatches = T_Players.TotalMatches + 1, inMatch = '1' where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points - ${MatchPoints} > 0;`);
             db.query(
-              `update T_Players set T_Points = T_Points - ${MatchPoints},T_Players.TotalMatches = T_Players.TotalMatches + 1, inMatch = '1' where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points - ${MatchPoints} > 0;`,
+              `update T_Players set T_Players.TotalMatches = T_Players.TotalMatches + 1, inMatch = '1' where UserId = '${UserId}' and T_Id = "${T_Id}" ;`,
               (err, result) => {
                 if (err) {
                   console.log(err);
@@ -694,7 +717,7 @@ app.post("/api/createTournamentStats", (req, res) => {
           } else {
             console.log(result);
             db.query(
-              `update T_Players set T_Points = T_Points - ${MatchPoints},T_Players.TotalMatches = T_Players.TotalMatches + 1, inMatch = '1' where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points - ${MatchPoints} > 0;`,
+              `update T_Players set T_Players.TotalMatches = T_Players.TotalMatches + 1, inMatch = '1' where UserId = '${UserId}' and T_Id = "${T_Id}" ;`,
               (err, result) => {
                 if (err) {
                   console.log(err);
