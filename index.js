@@ -1468,9 +1468,17 @@ async function  compare (givenpass, accpass){
                       <p>Chess Game</p>
                       </div>
                   `
+                },(err2, res2)=>{
+                  if(err2){
+                    res.status(400).send(err2);
+
+                  }
+                  else{
+                     res.send( res2);
+                  }
                 })
 
-                res.send('Email Sent');
+               
             }
           }
         }
