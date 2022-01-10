@@ -36,3 +36,6 @@
 ### DB Structure
 <img src="https://i.ibb.co/353HFhz/download.png" alt="download" border="0">
 note: this structure is just for understanding purpose since some column were changed or added as per changing requirements.
+
+### API's and screens
+<img src="https://i.ibb.co/XX7QT65/Whats-App-Image-2021-12-25-at-1-35-33-PM.jpg" alt="Whats-App-Image-2021-12-25-at-1-35-33-PM" border="0">
