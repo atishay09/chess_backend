@@ -20,6 +20,9 @@ const serveIndex = require("serve-index");
 
 const auth = require("./middleware/auth");
 
+const {OAuth2Client} = require('google-auth-library');
+const { error } = require("console");
+const client = new OAuth2Client(CLIENT_ID);
 
 var storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -1300,6 +1303,47 @@ app.post("/register", async (req, res) => {
   }
   // Our register logic ends here
 });
+// app.post("/googleLogin",(req,res) => {
+//   try{
+//     //get token from post request
+//     var {token} = req.body
+//     console.log(token);
+//     if(token){
+//       //check token
+//       const ticket = await client.verifyIdToken({
+//         idToken: token,
+//         audience: CLIENT_ID,
+//       });
+//       const payload = ticket.getPayload();
+//       const Email = payload['email']
+//       //query sql for the mail id
+//       db.query(
+//         `SELECT * FROM Chess.UserDetails where Email = "${Email}";`,
+//         (err, result) => {
+//           if (err) {
+//             console.log(err);
+//             res.status(400).send(err.sqlMessage) ;
+//           } else {
+//             console.log(result.length);
+//             if (Array.isArray(result) && result.length) {
+//               res.status(200).send(result)
+//             } else {
+//               res.status(400).send("user not present");
+//             }
+//           }
+//         }
+//       );
+      
+//     }
+    
+//   } catch (err) {
+//     console.log(err);
+//   }
+
+
+
+// })
+
 
 app.post("/login", (req, res) => {
   // Our register logic starts here
@@ -1603,6 +1647,34 @@ async function  compare (givenpass, accpass){
     }
   });
 
+  app.post("/api/spin", (req, res) => {
+    const email = req.body.email;
+  
+    if (email) {
+      db.query(
+        `select coins,lastSpin from PlayerDetails where Email="${email}"`,
+        (err, result) => {
+          if (err) {
+            console.log(err);
+          } else {
+            
+              res.status(400).send(result);
+
+                             
+          }
+        }
+      );
+    } else {
+      res.status(400).send("Some fields missing");
+    }
+  });
+
+
+
 app.listen(process.env.PORT || 4000, () => {
   console.log(`Example app listening at http://localhost: 4000`);
 });
+
+
+
+
