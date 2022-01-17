@@ -1657,7 +1657,7 @@ async function  compare (givenpass, accpass){
           if (err) {
             console.log(err);
           } else {
-            res.status(400).send(result);                   
+            res.status(200).send(result);                   
           }
         }
       );
