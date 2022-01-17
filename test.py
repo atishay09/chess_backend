@@ -5,7 +5,7 @@ import json
 API_ENDPOINT = "https://chessgame-backend.herokuapp.com/api/testAlter"
 
 
-data = {'email':"jidnyeshaj@gmail.com"}
+data = {}
   
 # sending post request and saving response as response object
 r = requests.post(url = API_ENDPOINT, data = data)

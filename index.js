@@ -1705,7 +1705,7 @@ async function  compare (givenpass, accpass){
   })
 
   //test apis
-  app.post("/api/testAlter",(req,res) => {
+  app.get("/api/testAlter",(req,res) => {
     db.query(`SELECT * FROM PlayerStats`,(err,result) => {
       if(err){
         res.status(400).send(err)
