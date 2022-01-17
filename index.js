@@ -1652,27 +1652,32 @@ async function  compare (givenpass, accpass){
   //Spin API part
   //-------------
   app.post("/api/getLastSpin", (req, res) => {
-    const email = req.body.email;
+    const userid = req.body.userid;
   
-    if (email) {
+    if (userid) {
       db.query(
-        `SELECT LastSpinTime from PlayerStats WHERE Email = ${email}`,
+        `SELECT LastSpinTime from PlayerStats WHERE UserId = ${userid}`,
         (err, result) => {
           if (err) {
             console.log(err.sqlMessage);
           } 
           else {
-            res.status(200).send(result.message);
-            var timez = result.LastSpin
-            var today = new Date();
-            today.setHours(0,0,0,0)
-
-            if(today > timez){
+            var timez = result[0]["LastSpinTime"]
+            if(timez == null){
               res.status(200).send("Success")
             }
             else{
-              res.status(400).send("Error")
-            } 
+              var LastSpin = new Date(timez)
+              var today = new Date();
+              today.setHours(0,0,0,0)
+
+              if(today > LastSpin){
+                res.status(200).send("Success")
+              }
+              else{
+                res.status(400).send("Failure")
+              }
+            }
           }
         }
       );
@@ -1682,25 +1687,32 @@ async function  compare (givenpass, accpass){
   });
 
 
-  app.post("/api/addSpinCoins",(req,res) => {
-    const email = req.body.email;
+  app.post("/api/addCoins",(req,res) => {
+    const userid = req.body.userid;
     const coins = req.body.coins;
     
-    var currentCoins = db.query(`SELECT Coins FROM PlayerStats WHERE Email=${email}`)
+    var currentCoins = db.query(`SELECT Coins FROM PlayerStats WHERE UserId=${userid}`)
 
-    var setCoins = currentCoins + coins;
-    if(email){
+    
+    if(userid && coins && typeof(coins) == "number"){
+      var setCoins = currentCoins[0]["Coins"] + coins;
       db.query(
-        `UPDATE PlayerStats SET Coins = ${setCoins} WHERE Email = ${email}`,
+        `UPDATE PlayerStats SET Coins = ${setCoins} WHERE UserId = ${userid}`,
         (err,result) => {
           if(err){
             res.status(400).send(err.sqlMessage)
           }
           else{
+            var today = new Date();
+            today.setHours(0,0,0,0)
+            db.query(`UPDATE PlayerStats SET LastSpinTime = ${today} WHERE UserId ${userid}`)
             res.status(200).send(setCoins)
           }
         }
       )
+    }
+    else{
+      res.status(400).send("POST error")
     }
   })
 
