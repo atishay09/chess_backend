@@ -1652,15 +1652,12 @@ async function  compare (givenpass, accpass){
   
     if (email) {
       db.query(
-        `select coins,lastSpin from PlayerDetails where Email="${email}"`,
+        `ALTER TABLE PlayerStats ADD Coins INTEGER`,
         (err, result) => {
           if (err) {
             console.log(err);
           } else {
-            
-              res.status(400).send(result);
-
-                             
+            res.status(400).send(result);                   
           }
         }
       );
