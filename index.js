@@ -22,6 +22,7 @@ const auth = require("./middleware/auth");
 
 const {OAuth2Client} = require('google-auth-library');
 const { error } = require("console");
+const { application } = require("express");
 const client = new OAuth2Client(CLIENT_ID);
 
 var storage = multer.diskStorage({
@@ -1647,7 +1648,10 @@ async function  compare (givenpass, accpass){
     }
   });
 
-  app.post("/api/spin", (req, res) => {
+  //-------------
+  //Spin API part
+  //-------------
+  app.post("/api/getLastSpin", (req, res) => {
     const email = req.body.email;
   
     if (email) {
@@ -1655,9 +1659,20 @@ async function  compare (givenpass, accpass){
         `ALTER TABLE PlayerStats ADD Coins INTEGER`,
         (err, result) => {
           if (err) {
-            console.log(err);
-          } else {
-            res.status(200).send(result);                   
+            console.log(err.sqlMessage);
+          } 
+          else {
+            res.status(200).send(result.message);
+            var timez = result.LastSpin
+            var today = new Date();
+            today.setHours(0,0,0,0)
+
+            if(today > timez){
+              res.status(200).send("Success")
+            }
+            else{
+              res.status(400).send("Error")
+            } 
           }
         }
       );
@@ -1666,6 +1681,40 @@ async function  compare (givenpass, accpass){
     }
   });
 
+
+  app.post("/api/addSpinCoins",(req,res) => {
+    const email = req.body.email;
+    const coins = req.body.coins;
+    
+    var currentCoins = db.query(`SELECT Coins FROM PlayerStats WHERE Email=${email}`)
+
+    var setCoins = currentCoins + coins;
+    if(email){
+      db.query(
+        `UPDATE PlayerStats SET Coins = ${setCoins} WHERE Email = ${email}`,
+        (err,result) => {
+          if(err){
+            res.status(400).send(err.sqlMessage)
+          }
+          else{
+            res.status(200).send(setCoins)
+          }
+        }
+      )
+    }
+  })
+
+  //test apis
+  app.post("/api/testAlter",(req,res) => {
+    db.query(`SELECT * FROM PlayerStats`,(err,result) => {
+      if(err){
+        res.status(400).send(err)
+      }
+      else{
+        res.status(200).send(result)
+      }
+    })
+  })
 
 
 app.listen(process.env.PORT || 4000, () => {
