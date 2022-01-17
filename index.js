@@ -1656,7 +1656,7 @@ async function  compare (givenpass, accpass){
   
     if (email) {
       db.query(
-        `ALTER TABLE PlayerStats ADD Coins INTEGER`,
+        `SELECT LastSpinTime from PlayerStats WHERE Email = ${email}`,
         (err, result) => {
           if (err) {
             console.log(err.sqlMessage);
@@ -1708,10 +1708,11 @@ async function  compare (givenpass, accpass){
   app.get("/api/testAlter",(req,res) => {
     db.query(`SELECT * FROM PlayerStats`,(err,result) => {
       if(err){
-        res.status(400).send(err)
+        return res.send(err)
+        //ALTER TABLE PlayerStats ADD Coins INTEGER
       }
       else{
-        res.status(200).send(result)
+        return res.send(result)
       }
     })
   })
