@@ -1704,7 +1704,7 @@ async function  compare (givenpass, accpass){
                 today.setHours(0,0,0,0)
                 db.query(`UPDATE PlayerStats SET LastSpinTime = "${today}" WHERE UserId = "${userid}"`)
                 console.log(setCoins)
-                res.sendStatus(200).send(setCoins.toString())
+                res.status(200).send(setCoins.toString())
               }
             }
           )
