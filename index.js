@@ -1650,13 +1650,13 @@ async function  compare (givenpass, accpass){
   //-------------
   app.post("/api/getLastSpin", (req, res) => {
     const userid = req.body.userid;
-  
+    console.log(userid);
     if (userid) {
       db.query(
-        `SELECT LastSpinTime from PlayerStats WHERE UserId = ${userid}`,
+        `SELECT LastSpinTime from PlayerStats WHERE UserId = "${userid}"`,
         (err, result) => {
           if (err) {
-            res.send(400).send(err.sqlMessage);
+            res.status(400).send(err.sqlMessage);
           } 
           else {
             var timez = result[0]["LastSpinTime"]
@@ -1687,30 +1687,36 @@ async function  compare (givenpass, accpass){
   app.post("/api/addCoins",(req,res) => {
     const userid = req.body.userid;
     const coins = req.body.coins;
-    
-    var currentCoins = db.query(`SELECT Coins FROM PlayerStats WHERE UserId=${userid}`)
-
-    
-    if(userid && coins && typeof(coins) == "number"){
-      var setCoins = currentCoins[0]["Coins"] + coins;
-      db.query(
-        `UPDATE PlayerStats SET Coins = ${setCoins} WHERE UserId = ${userid}`,
-        (err,result) => {
-          if(err){
-            res.status(400).send(err.sqlMessage)
-          }
-          else{
-            var today = new Date();
-            today.setHours(0,0,0,0)
-            db.query(`UPDATE PlayerStats SET LastSpinTime = ${today} WHERE UserId = ${userid}`)
-            res.status(200).send(setCoins)
-          }
+    db.query(`SELECT Coins FROM PlayerStats WHERE UserId = "rontinag311641793193347"`,
+    (err,result) => {
+        var currentCoins = result[0]["Coins"]
+        console.log(userid,coins,result[0]["Coins"]);
+        if(userid && coins){
+          var setCoins = Number(currentCoins) + Number(coins);
+          db.query(
+            `UPDATE PlayerStats SET Coins = "${setCoins}" WHERE UserId = "${userid}"`,
+            (err,result) => {
+              if(err){
+                res.status(400).send(err.sqlMessage)
+              }
+              else{
+                var today = new Date();
+                today.setHours(0,0,0,0)
+                db.query(`UPDATE PlayerStats SET LastSpinTime = "${today}" WHERE UserId = "${userid}"`)
+                console.log(setCoins)
+                res.sendStatus(200).send(setCoins.toString())
+              }
+            }
+          )
         }
-      )
-    }
-    else{
-      res.status(400).send("POST error")
-    }
+        else{
+          res.status(400).send("POST error")
+        }
+      }
+    )
+    
+    
+    
   })
 
   //test apis//
