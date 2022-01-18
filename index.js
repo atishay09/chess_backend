@@ -1,38 +1,37 @@
-import express, { json, urlencoded, static } from "express";
-import { urlencoded as _urlencoded, json as _json } from "body-parser";
-import { query } from "./config/db";
+const express = require("express");
+var bodyParser = require("body-parser");
+const db = require("./config/db");
 const app = express();
 require("dotenv").config();
 const debug = require("debug")("myapp:server");
 
-import cors from "cors";
-app.use(_urlencoded({ extended: true }));
-app.use(_json());
-import { createTransport } from "nodemailer";
+const cors = require("cors");
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+const nodemailer = require("nodemailer")
 app.use(cors());
-import { hash, compareSync, compare as _compare } from "bcryptjs";
-import { sign } from "jsonwebtoken";
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
-import { extname } from "path";
-import multer, { diskStorage } from "multer";
-import logger from "morgan";
-import serveIndex from "serve-index";
+const path = require("path");
+const multer = require("multer");
+const logger = require("morgan");
+const serveIndex = require("serve-index");
 
-import auth from "./middleware/auth";
+const auth = require("./middleware/auth");
 
-import { OAuth2Client } from 'google-auth-library';
-import { error } from "console";
-import { application } from "express";
-const client = new OAuth2Client(CLIENT_ID);
+const {OAuth2Client} = require('google-auth-library');
+const { error } = require("console");
+const { application } = require("express");
 
-var storage = diskStorage({
+var storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "./public/uploads");
   },
   filename: (req, file, cb) => {
     cb(
       null,
-      file.fieldname + "-" + Date.now() + extname(file.originalname)
+      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
     );
   },
 });
@@ -43,12 +42,12 @@ const upload = multer({ storage: storage });
 //get the router
 
 app.use(logger("tiny"));
-app.use(json());
-app.use(urlencoded({ extended: false }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 //app.use(express.static('public'));
 app.use(
   "/ftp",
-  static("public"),
+  express.static("public"),
   serveIndex("public", { icons: true })
 );
 
@@ -70,7 +69,7 @@ app.post("/api/createUser", (req, res) => {
   const UserName = req.body.UserName;
   const DisplayImg = req.body.DisplayImg;
 
-  query(
+  db.query(
     `insert into UserDetails (UserId,Email,Joining,LastLogin,UserName,DisplayImg) values ('${UserId}', '${Email}', '${Joining}', '${LastLogin}', '${UserName}',  '${DisplayImg}');`,
     (err, result) => {
       if (err) {
@@ -78,7 +77,7 @@ app.post("/api/createUser", (req, res) => {
         res.status(400).send(err.sqlMessage);
       } else {
         console.log(result);
-        query(
+        db.query(
           `insert into PlayerStats (UserId,Points,Won, Lose, LastGame, Total, Drawn) values ('${UserId}', '100','0','0','0','0','0' );`,
           (err, result) => {
             if (err) {
@@ -100,7 +99,7 @@ app.post("/api/createUser", (req, res) => {
 app.get("/api/getUserDetails/:UserId", auth, (req, res) => {
   const UserId = req.query.UserId;
 
-  query(
+db.query(
     `SELECT UserDetails.*, PlayerStats.* from UserDetails inner join PlayerStats on PlayerStats.UserId = UserDetails.UserId where UserDetails.UserId = '${req.user.user_id}';`,
     (err, result) => {
       if (err) {
@@ -127,7 +126,7 @@ app.post("/api/createUserStats", (req, res) => {
   const MatchPoints = req.body.MatchPoints;
 
   if (Match) {
-    query(
+    db.query(
       `insert into Logs (UserId,Logs.Match) values ('${Player1}','${Match}'); `,
       (err, result) => {
         if (err) {
@@ -135,7 +134,7 @@ app.post("/api/createUserStats", (req, res) => {
           res.status(400).send(err.sqlMessage);
         } else {
           console.log(result);
-          query(
+          db.query(
             `update PlayerStats set Points = Points - ${MatchPoints} where UserId = '${Player1}' and Points - ${MatchPoints} > 0;`,
             (err, result) => {
               if (err) {
@@ -149,7 +148,7 @@ app.post("/api/createUserStats", (req, res) => {
         }
       }
     );
-    query(
+    db.query(
       `insert into Logs (UserId,Logs.Match) values ('${Player2}','${Match}');`,
       (err, result) => {
         if (err) {
@@ -157,7 +156,7 @@ app.post("/api/createUserStats", (req, res) => {
           res.status(400).send(err.sqlMessage);
         } else {
           console.log(result);
-          query(
+          db.query(
             `update PlayerStats set Points = Points - ${MatchPoints} where UserId = '${Player2}' and Points - ${MatchPoints} > 0;`,
             (err, result) => {
               if (err) {
@@ -175,7 +174,7 @@ app.post("/api/createUserStats", (req, res) => {
     );
   } else {
     if (Drawn) {
-      query(
+      db.query(
         `insert into Logs (UserId,Logs.Drawn) values ('${Player1}','${Drawn}'); `,
         (err, result) => {
           if (err) {
@@ -183,7 +182,7 @@ app.post("/api/createUserStats", (req, res) => {
             res.status(400).send(err.sqlMessage);
           } else {
             console.log(result);
-            query(
+            db.query(
               `update PlayerStats set Points = Points + ${MatchPoints} where UserId = '${Player1}' and Points + ${MatchPoints} > 0;`,
               (err, result) => {
                 if (err) {
@@ -197,7 +196,7 @@ app.post("/api/createUserStats", (req, res) => {
           }
         }
       );
-      query(
+      db.query(
         `insert into Logs (UserId,Logs.Drawn) values ('${Player2}','${Drawn}');`,
         (err, result) => {
           if (err) {
@@ -205,7 +204,7 @@ app.post("/api/createUserStats", (req, res) => {
             res.status(400).send(err.sqlMessage);
           } else {
             console.log(result);
-            query(
+            db.query(
               `update PlayerStats set Points = Points + ${MatchPoints} where UserId = '${Player2}' and Points + ${MatchPoints} > 0;`,
               (err, result) => {
                 if (err) {
@@ -222,7 +221,7 @@ app.post("/api/createUserStats", (req, res) => {
         }
       );
     } else {
-      query(
+      db.query(
         `insert into Logs (UserId,Logs.Won) values ('${Winner}','1'); `,
         (err, result) => {
           if (err) {
@@ -230,7 +229,7 @@ app.post("/api/createUserStats", (req, res) => {
             res.status(400).send(err.sqlMessage);
           } else {
             console.log(result);
-            query(
+            db.query(
               `update PlayerStats set Points = Points + ${MatchPoints} where UserId = '${Winner}' and Points + ${MatchPoints} > 0;`,
               (err, result) => {
                 if (err) {
@@ -244,7 +243,7 @@ app.post("/api/createUserStats", (req, res) => {
           }
         }
       );
-      query(
+      db.query(
         `insert into Logs (UserId,Logs.Lose) values ('${Looser}','1');`,
         (err, result) => {
           if (err) {
@@ -268,7 +267,7 @@ app.post("/api/createStats", (req, res) => {
 
   switch (Status) {
     case "Won":
-      query(
+      db.query(
         `insert into Logs (UserId,Logs.Won) values ('${UserId}','1'); `,
         (err, result) => {
           if (err) {
@@ -276,7 +275,7 @@ app.post("/api/createStats", (req, res) => {
             res.status(400).send(err.sqlMessage);
           } else {
             console.log(result);
-            query(
+            db.query(
               `update PlayerStats set Points = Points + ${MatchPoints} where UserId = '${UserId}' and Points + ${MatchPoints} > 0;`,
               (err, result) => {
                 if (err) {
@@ -293,7 +292,7 @@ app.post("/api/createStats", (req, res) => {
       );
       break;
     case "spinwin":
-      query(
+      db.query(
         `insert into Logs (UserId,Logs.SpinWin,TimeStamp) values ('${UserId}','1','${TimeStamp}'); `,
         (err, result) => {
           if (err) {
@@ -301,7 +300,7 @@ app.post("/api/createStats", (req, res) => {
             res.status(400).send(err.sqlMessage);
           } else {
             console.log(result);
-            query(
+            db.query(
               `update PlayerStats set Points = Points + ${MatchPoints} where UserId = '${UserId}' and Points + ${MatchPoints} > 0;`,
               (err, result) => {
                 if (err) {
@@ -318,7 +317,7 @@ app.post("/api/createStats", (req, res) => {
       );
       break;
     case "Lose":
-      query(
+      db.query(
         `insert into Logs (UserId,Logs.Lose) values ('${UserId}','1'); `,
         (err, result) => {
           if (err) {
@@ -332,7 +331,7 @@ app.post("/api/createStats", (req, res) => {
       );
       break;
     case "Drawn":
-      query(
+      db.query(
         `insert into Logs (UserId,Logs.Drawn) values ('${UserId}','1'); `,
         (err, result) => {
           if (err) {
@@ -340,7 +339,7 @@ app.post("/api/createStats", (req, res) => {
             res.status(400).send(err.sqlMessage);
           } else {
             console.log(result);
-            query(
+            db.query(
               `update PlayerStats set Points = Points + ${MatchPoints} where UserId = '${UserId}' and Points + ${MatchPoints} > 0;`,
               (err, result) => {
                 if (err) {
@@ -357,7 +356,7 @@ app.post("/api/createStats", (req, res) => {
       );
       break;
     case "Match":
-      query(
+      db.query(
         `insert into Logs (UserId,Logs.Match) values ('${UserId}','1'); `,
         (err, result) => {
           if (err) {
@@ -365,7 +364,7 @@ app.post("/api/createStats", (req, res) => {
             res.status(400).send(err.sqlMessage);
           } else {
             console.log(result);
-            query(
+            db.query(
               `update PlayerStats set Points = Points - ${MatchPoints} where UserId = '${UserId}' and Points - ${MatchPoints} > 0;`,
               (err, result) => {
                 if (err) {
@@ -382,7 +381,7 @@ app.post("/api/createStats", (req, res) => {
       );
       break;
     case "Join":
-      query(
+      db.query(
         `insert into Logs (UserId,Logs.Match) values ('${UserId}','1'); `,
         (err, result) => {
           if (err) {
@@ -390,7 +389,7 @@ app.post("/api/createStats", (req, res) => {
             res.status(400).send(err.sqlMessage);
           } else {
             console.log(result);
-            query(
+            db.query(
               `update PlayerStats set Points = Points - ${MatchPoints} where UserId = '${UserId}' and Points - ${MatchPoints} > 0;`,
               (err, result) => {
                 if (err) {
@@ -426,7 +425,7 @@ app.post("/api/createTournament", (req, res) => {
   const T_Fee = req.body.T_Fee;
   const Max_Players = req.body.Max_Players;
 
-  query(
+  db.query(
     `insert into Tournaments (T_Id,T_Name,TotalPoints,TotalGames,Description,T_img,Status,T_Fee,Max_Players) values ('${T_Id}', '${T_Name}', '${TotalPoints}', '${TotalGames}', '${Description}',  '${T_img}','${Status}', '${T_Fee}', ${Max_Players});`,
     (err, result) => {
       if (err) {
@@ -441,7 +440,7 @@ app.post("/api/createTournament", (req, res) => {
 });
 
 app.get("/api/getAllTournament", (req, res) => {
-  query(`SELECT * FROM Chess.Tournaments;`, (err, result) => {
+  db.query(`SELECT * FROM Chess.Tournaments;`, (err, result) => {
     if (err) {
       console.log(err);
       res.status(400).send(err.sqlMessage);
@@ -462,7 +461,7 @@ app.post("/api/createTournamentPlayers", (req, res) => {
   const MatchesDrawn = req.body.MatchesDrawn;
   const TotalMatches = req.body.TotalMatches;
 
-  query(
+  db.query(
     `insert into T_Players (UserId,T_id,Timestamp,T_Points,MatchesWon,MatchesLoss,MatchesDrawn,TotalMatches) values ('${UserId}', '${T_id}', '${Timestamp}', '${T_Points}', '${MatchesWon}',  '${MatchesLoss}','${MatchesDrawn}', '${TotalMatches}');`,
     (err, result) => {
       if (err) {
@@ -470,7 +469,7 @@ app.post("/api/createTournamentPlayers", (req, res) => {
         res.status(400).send(err.sqlMessage);
       } else {
         console.log(result);
-        query(
+        db.query(
           `insert into Logs (UserId,Logs.Match) values ('${UserId}','1'); `,
           (err, result) => {
             if (err) {
@@ -478,7 +477,7 @@ app.post("/api/createTournamentPlayers", (req, res) => {
               res.status(400).send(err.sqlMessage);
             } else {
               console.log(result);
-              query(
+              db.query(
                 `update PlayerStats set Points = Points - ${T_Points} where UserId = '${UserId}' and Points - ${T_Points} > 0;`,
                 (err, result) => {
                   if (err) {
@@ -502,7 +501,7 @@ app.post("/api/createTournamentPlayers", (req, res) => {
 app.get("/api/getRoomId", (req, res) => {
   const Timestamp = new Date().valueOf();
 
-  query(
+  db.query(
     `insert into emp ( timestamp) value("${Timestamp}");`,
     (err, result) => {
       if (err) {
@@ -510,7 +509,7 @@ app.get("/api/getRoomId", (req, res) => {
         res.status(400).send(err.sqlMessage);
       } else {
         console.log(result);
-        query(
+        db.query(
           `select gno from emp where timestamp = "${Timestamp}";`,
           (err, result) => {
             if (err) {
@@ -528,7 +527,7 @@ app.get("/api/getRoomId", (req, res) => {
 });
 app.get("/api/getTournamentByAuth/:UserId", (req, res) => {
   const UserId = req.params.UserId;
-  query(
+  db.query(
     `SELECT * , case when exists( SELECT * FROM T_Players WHERE UserId = '${UserId}' and T_Id = Tournaments.T_Id ) then 'True' else 'False' end as isPresent, (select count(*) from T_Players where T_Players.T_Id = Tournaments.T_Id) as count, case when (select count(*) from T_Players where T_Players.T_Id = Tournaments.T_Id) >= Max_Players then "true" else "false" end as Max_Reached FROM Chess.Tournaments;`,
     (err, result) => {
       if (err) {
@@ -545,7 +544,7 @@ app.post("/api/DeleteTPlayers", (req, res) => {
   const T_Id = req.body.T_Id;
   const UserId = req.body.UserId;
 
-  query(
+  db.query(
     `delete from T_Players where T_Id = "${T_Id}" and UserId = "${UserId}";`,
     (err, result) => {
       if (err) {
@@ -560,7 +559,7 @@ app.post("/api/DeleteTPlayers", (req, res) => {
 });
 app.get("/api/getUserTournament/:UserId", (req, res) => {
   const UserId = req.params.UserId;
-  query(
+  db.query(
     `SELECT T_Players.*, Tournaments.* FROM Chess.T_Players inner join Tournaments on Tournaments.T_Id = T_Players.T_Id where UserId="${UserId}";`,
     (err, result) => {
       if (err) {
@@ -575,7 +574,7 @@ app.get("/api/getUserTournament/:UserId", (req, res) => {
 });
 app.get("/api/getTournamentPlayers/:T_Id", (req, res) => {
   const T_Id = req.params.T_Id;
-  query(
+  db.query(
     `SELECT * FROM Chess.T_Players where T_Id = "${T_Id}" and inMatch = "0";`,
     (err, result) => {
       if (err) {
@@ -599,7 +598,7 @@ app.post("/api/createTournamentStats", (req, res) => {
 
   switch (Status) {
     case "Won":
-      query(
+      db.query(
         `insert into Logs (UserId,Logs.Won) values ('${UserId}','1'); `,
         (err, result) => {
           if (err) {
@@ -607,7 +606,7 @@ app.post("/api/createTournamentStats", (req, res) => {
             res.status(400).send(err.sqlMessage);
           } else {
             console.log(result);
-            query(
+            db.query(
               `update T_Players set T_Points = T_Points + ${MatchPoints}, inMatch = '0' where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points + ${MatchPoints} > 0;`,
               (err, result) => {
                 if (err) {
@@ -624,7 +623,7 @@ app.post("/api/createTournamentStats", (req, res) => {
       );
       break;
     case "Lose":
-      query(
+      db.query(
         `insert into Logs (UserId,Logs.Lose) values ('${UserId}','1'); `,
         (err, result) => {
           if (err) {
@@ -632,7 +631,7 @@ app.post("/api/createTournamentStats", (req, res) => {
             res.status(400).send(err.sqlMessage);
           } else {
             console.log(result);
-            query(
+            db.query(
               `update T_Players set inMatch = '0' where UserId = '${UserId}' and T_Id = "${T_Id}";`,
               (err, result) => {
                 if (err) {
@@ -649,7 +648,7 @@ app.post("/api/createTournamentStats", (req, res) => {
       );
       break;
     case "Drawn":
-      query(
+      db.query(
         `insert into Logs (UserId,Logs.Drawn) values ('${UserId}','1'); `,
         (err, result) => {
           if (err) {
@@ -657,7 +656,7 @@ app.post("/api/createTournamentStats", (req, res) => {
             res.status(400).send(err.sqlMessage);
           } else {
             console.log(result);
-            query(
+            db.query(
               `update T_Players set T_Points = T_Points + ${MatchPoints}, inMatch = '0' where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points + ${MatchPoints} > 0;`,
               (err, result) => {
                 if (err) {
@@ -674,7 +673,7 @@ app.post("/api/createTournamentStats", (req, res) => {
       );
       break;
     case "Match":
-      query(
+      db.query(
         `insert into Logs (UserId,Logs.Match) values ('${UserId}','1'); `,
         (err, result) => {
           if (err) {
@@ -683,7 +682,7 @@ app.post("/api/createTournamentStats", (req, res) => {
           } else {
             console.log(result);
             console.log(`update T_Players set T_Points = T_Points - ${MatchPoints},T_Players.TotalMatches = T_Players.TotalMatches + 1, inMatch = '1' where UserId = '${UserId}' and T_Id = "${T_Id}" and T_Points - ${MatchPoints} > 0;`);
-            query(
+            db.query(
               `update T_Players set T_Players.TotalMatches = T_Players.TotalMatches + 1, inMatch = '1' where UserId = '${UserId}' and T_Id = "${T_Id}" ;`,
               (err, result) => {
                 if (err) {
@@ -696,7 +695,7 @@ app.post("/api/createTournamentStats", (req, res) => {
               }
             );
 
-            query(
+            db.query(
               `insert into Requests (UserId,TimeStamp, T_Id, Status) values ('${reqUserId}','${Timestamp}','${T_Id}','Join Request');`,
               (err, result) => {
                 if (err) {
@@ -712,7 +711,7 @@ app.post("/api/createTournamentStats", (req, res) => {
       );
       break;
     case "Join":
-      query(
+      db.query(
         `insert into Logs (UserId,Logs.Match) values ('${UserId}','1'); `,
         (err, result) => {
           if (err) {
@@ -720,7 +719,7 @@ app.post("/api/createTournamentStats", (req, res) => {
             res.status(400).send(err.sqlMessage);
           } else {
             console.log(result);
-            query(
+            db.query(
               `update T_Players set T_Players.TotalMatches = T_Players.TotalMatches + 1, inMatch = '1' where UserId = '${UserId}' and T_Id = "${T_Id}" ;`,
               (err, result) => {
                 if (err) {
@@ -737,7 +736,7 @@ app.post("/api/createTournamentStats", (req, res) => {
                 }
               }
             );
-            query(
+            db.query(
               `delete from Requests where UserId = "${UserId}" and T_Id = "${T_Id}";`,
               (err, result) => {
                 if (err) {
@@ -753,7 +752,7 @@ app.post("/api/createTournamentStats", (req, res) => {
       );
       break;
     case "Decline":
-      query(
+      db.query(
         `delete from Requests where UserId = "${UserId}" and T_Id = "${T_Id}" and TimeStamp = "${ReqTimeStamp}";`,
         (err, result) => {
           if (err) {
@@ -782,7 +781,7 @@ app.post("/api/createTournamentStats", (req, res) => {
 });
 app.get("/api/getPlayersRank", (req, res) => {
   const T_Id = req.params.T_Id;
-  query(
+  db.query(
     `SELECT PlayerStats.*, UserDetails.*, rank() OVER ( order by Points desc ) AS 'dense_rank' FROM Chess.PlayerStats inner join UserDetails on UserDetails.UserId = PlayerStats.UserId;`,
     (err, result) => {
       if (err) {
@@ -798,7 +797,7 @@ app.get("/api/getPlayersRank", (req, res) => {
 app.get("/api/getRequestStatus/UserId=:UserId/T_Id=:T_Id", (req, res) => {
   const T_Id = req.params.T_Id;
   const UserId = req.params.UserId;
-  query(
+  db.query(
     `SELECT * FROM Chess.Requests where UserId = "${UserId}" and T_Id = "${T_Id}";`,
     (err, result) => {
       if (err) {
@@ -818,7 +817,7 @@ app.post("/api/UpdateUserDetails", (req, res) => {
   const UserId = req.body.UserId;
 
   if (UserName && DisplayImg && Phone && UserId) {
-    query(
+    db.query(
       `update UserDetails set UserName = "${UserName}", DisplayImg ="${DisplayImg}", Phone = "${Phone}"  where UserId = "${UserId}";`,
       (err, result) => {
         if (err) {
@@ -840,7 +839,7 @@ app.post("/api/UpdateUserDetails", (req, res) => {
 });
 app.get("/api/getUserDetailsWithRank/:UserId", (req, res) => {
   const UserId = req.params.UserId;
-  query(
+  db.query(
     `SELECT UserDetails.*, RankTable.* FROM Chess.UserDetails inner join (SELECT UserId, rank() OVER ( order by Points desc ) AS 'rank' FROM Chess.PlayerStats) as RankTable on RankTable.UserId = UserDetails.UserId where UserDetails.UserId = '${UserId}';`,
     (err, result) => {
       if (err) {
@@ -856,7 +855,7 @@ app.get("/api/getUserDetailsWithRank/:UserId", (req, res) => {
 
 app.get("/api/getTournamentRanking/:T_Id", (req, res) => {
   const T_Id = req.params.T_Id;
-  query(
+  db.query(
     `SELECT T_Players.*, UserDetails.*, rank() OVER ( order by T_Points desc ) AS 'dense_rank' FROM Chess.T_Players inner join UserDetails on UserDetails.UserId = T_Players.UserId where T_Players.T_Id = "${T_Id}" order by T_Points desc;`,
     (err, result) => {
       if (err) {
@@ -878,7 +877,7 @@ app.get("/api/allSync_CMS/tenentId=:tenentId", (req, res) => {
   var PlayOnlineCMS;
   var ProfileCMS;
   var finalRes = {};
-  query(
+  db.query(
     `SELECT * FROM Chess.DailyChallengesCMS where tenentId = "${tenentId}";`,
     (err, result) => {
       if (err) {
@@ -891,7 +890,7 @@ app.get("/api/allSync_CMS/tenentId=:tenentId", (req, res) => {
       }
     }
   );
-  query(
+  db.query(
     `SELECT * FROM Chess.TournamentCMS where tenentId = "${tenentId}";`,
     (err, result) => {
       if (err) {
@@ -904,7 +903,7 @@ app.get("/api/allSync_CMS/tenentId=:tenentId", (req, res) => {
       }
     }
   );
-  query(
+  db.query(
     `SELECT * FROM Chess.PlayOnlineCMS where tenentId = "${tenentId}";`,
     (err, result) => {
       if (err) {
@@ -917,7 +916,7 @@ app.get("/api/allSync_CMS/tenentId=:tenentId", (req, res) => {
       }
     }
   );
-  query(
+  db.query(
     `SELECT * FROM Chess.ProfileCMS where tenentId = "${tenentId}";`,
     (err, result) => {
       if (err) {
@@ -930,7 +929,7 @@ app.get("/api/allSync_CMS/tenentId=:tenentId", (req, res) => {
       }
     }
   );
-  query(
+  db.query(
     `SELECT * FROM Chess.HomePageCMS where tenentId = "${tenentId}";`,
     (err, result) => {
       if (err) {
@@ -962,7 +961,7 @@ app.post("/api/DailyChallengeCMS", (req, res) => {
     backgroundImg &&
     DailyChallengesCMScol
   ) {
-    query(
+    db.query(
       `update DailyChallengesCMS set scoreLogo = "${scoreLogo}", DailyChallengesCMScol = "${DailyChallengesCMScol}", backgroundImg = "${backgroundImg}", textColor ="${textColor}", bgColor = "${bgColor}"  where tenentId = "${tenentId}";`,
       (err, result) => {
         if (err) {
@@ -993,7 +992,7 @@ app.post("/api/TournamentCMS", (req, res) => {
   const tenentId = req.body.tenentId;
 
   if (Title && subHead && cardSlug && tenentId && backgroundImg && scoreIcon) {
-    query(
+    db.query(
       `update TournamentCMS set Title = "${Title}", prizeImg ="${prizeImg}", alertBg = "${alertBg}", scoreIcon = "${scoreIcon}", backgroundImg = "${backgroundImg}", subHead ="${subHead}", cardSlug = "${cardSlug}"  where tenentId = "${tenentId}";`,
       (err, result) => {
         if (err) {
@@ -1033,7 +1032,7 @@ app.post("/api/PlayOnlineCMS", (req, res) => {
     alertBg &&
     hintCTA
   ) {
-    query(
+    db.query(
       `update PlayOnlineCMS set bgColor = "${bgColor}", hintCTA ="${hintCTA}", alertBg = "${alertBg}", createCTA = "${createCTA}", backgroundImg = "${backgroundImg}", textColor ="${textColor}", shareCTA = "${shareCTA}"  where tenentId = "${tenentId}";`,
       (err, result) => {
         if (err) {
@@ -1074,7 +1073,7 @@ app.post("/api/ProfileCMS", (req, res) => {
     leaderBoardImg &&
     editCTA
   ) {
-    query(
+    db.query(
       `update ProfileCMS set bgColor = "${bgColor}", defaultDP = "${defaultDP}", editCTA ="${editCTA}", leaderBoardImg = "${leaderBoardImg}", logoutCTA = "${logoutCTA}", backgroundImg = "${backgroundImg}", textColor ="${textColor}", subBgColor = "${subBgColor}"  where tenentId = "${tenentId}";`,
       (err, result) => {
         if (err) {
@@ -1114,7 +1113,7 @@ app.post("/api/HomePageCMS", (req, res) => {
     isSync &&
     spinValues
   ) {
-    query(
+    db.query(
       `update HomePageCMS set Logo = "${Logo}", spinValues = "${spinValues}", isSync ="${isSync}", loginCTA = "${loginCTA}", bgText = "${bgText}", BackgroundImg = "${BackgroundImg}", bgColor ="${bgColor}"  where tenentId = "${tenentId}";`,
       (err, result) => {
         if (err) {
@@ -1139,7 +1138,7 @@ app.post("/api/UpdateSpinWin", (req, res) => {
   const UserId = req.body.UserId;
 
   if (Timestamp && UserId) {
-    query(
+    db.query(
       `update UserDetails set spinWin = "${Timestamp}" where UserId = "${UserId}";`,
       (err, result) => {
         if (err) {
@@ -1161,7 +1160,7 @@ app.post("/api/UpdateSpinWin", (req, res) => {
 });
 app.get("/api/getSpinWinHistory/userId=:UserId", (req, res) => {
   const UserId = req.params.UserId;
-  query(
+  db.query(
     `SELECT UserId, Id, SpinWin, timestamp FROM Chess.Logs where UserId = "${UserId}" and SpinWin = 1;`,
     (err, result) => {
       if (err) {
@@ -1179,7 +1178,7 @@ app.post("/api/createPuzzleGames", (req, res) => {
   const Fen = req.body.Fen;
   const Pgn = req.body.Pgn;
 
-  query(
+  db.query(
     `insert into Game_collections (GameId,Fen,Pgn) values ('${GameId}', '${Fen}', '${Pgn}');`,
     (err, result) => {
       if (err) {
@@ -1194,7 +1193,7 @@ app.post("/api/createPuzzleGames", (req, res) => {
 });
 
 async function findOne(email) {
-  query(
+  db.query(
     `SELECT * FROM Chess.UserDetails where Email = "${email}";`,
     (err, result) => {
       if (err) {
@@ -1230,9 +1229,9 @@ app.post("/register", async (req, res) => {
     if (!(Email && password && UserId && UserName && DisplayImg)) {
       res.status(400).send("All input is required");
     } else {
-      var encryptedPassword = await hash(password, 10);
+      var encryptedPassword = await bcrypt.hash(password, 10);
       var oldUser = false;
-      query(
+      db.query(
         `SELECT * FROM Chess.UserDetails where Email = "${Email}";`,
         (err, result) => {
           if (err) {
@@ -1243,7 +1242,7 @@ app.post("/register", async (req, res) => {
             if (Array.isArray(result) && result.length) {
               res.status(409).send("User Already Exist. Please Login");
             } else {
-              query(
+              db.query(
                 `insert into UserDetails (UserId,Email,Joining,LastLogin,UserName,DisplayImg,password) values ('${UserId}', '${Email}', '', '', '${UserName}',  '${DisplayImg}',"${encryptedPassword}");`,
                 (err, result) => {
                   if (err) {
@@ -1251,7 +1250,7 @@ app.post("/register", async (req, res) => {
                     res.status(400).send(err.sqlMessage);
                   } else {
                     console.log(result);
-                    query(
+                    db.query(
                       `insert into PlayerStats (UserId,Points,Won, Lose, LastGame, Total, Drawn) values ('${UserId}', '100','0','0','0','0','0' );`,
                       (err, result) => {
                         if (err) {
@@ -1357,7 +1356,7 @@ app.post("/login", (req, res) => {
   if (!(Email && password)) {
     res.status(400).send("All input is required");
   } else {
-    query(
+    db.query(
       `SELECT * FROM Chess.UserDetails where Email = "${Email}";`,
       (err, result) => {
         if (err) {
@@ -1366,9 +1365,9 @@ app.post("/login", (req, res) => {
         } else {
           console.log(result.length);
           if (Array.isArray(result) && result.length) {
-            console.log(compareSync(password, result[0]["password"]));
-            if(compareSync(password, result[0]["password"])){
-              const token = sign(
+            console.log(bcrypt.compareSync(password, result[0]["password"]));
+            if(bcrypt.compareSync(password, result[0]["password"])){
+              const token = jwt.sign(
                 { user_id: result[0]["UserId"], Email },
                 process.env.TOKEN_KEY,
                 {
@@ -1402,8 +1401,8 @@ app.post("/api/updatePassword",async (req, res) => {
   const Email = req.body.Email;
 
   if (otp && Email && password) {
-    var encryptedPassword = await hash(password, 10);
-    query(
+    var encryptedPassword = await bcrypt.hash(password, 10);
+    db.query(
       `SELECT * FROM Chess.UserDetails where Email="${Email}";`,
       (err, result) => {
         if (err) {
@@ -1412,7 +1411,7 @@ app.post("/api/updatePassword",async (req, res) => {
         } else {
           console.log(result[0]["otp"]);
           if(result[0]["otp"] == otp){
-             query(
+             db.query(
               `update UserDetails set password = "${encryptedPassword}" where Email = "${Email}";`,
               (err, result) => {
                 if (err) {
@@ -1423,7 +1422,7 @@ app.post("/api/updatePassword",async (req, res) => {
                   if (result.affectedRows === 0) {
                     res.status(400).send(result.message);
                   } else {
-                    query(
+                    db.query(
                       `update UserDetails set otp = null where Email = "${Email}";`,
                       (err, result) => {
                         if (err) {
@@ -1458,7 +1457,7 @@ app.post("/api/updatePassword",async (req, res) => {
   }
 });
 async function  compare (givenpass, accpass){
-    return await _compare(givenpass, accpass);
+    return await bcrypt.compare(givenpass, accpass);
   }
 
   function getPin() {
@@ -1476,7 +1475,7 @@ async function  compare (givenpass, accpass){
     const Email = req.body.Email;
    let pin = getPin();
     if (Email) {
-      query(
+      db.query(
         `update UserDetails set otp = '${pin}' where Email = "${Email}";`,
         (err, result) => {
           if (err) {
@@ -1488,7 +1487,7 @@ async function  compare (givenpass, accpass){
               res.status(400).send("No users found please sign up!");
             } else {
              
-                const transport = createTransport({
+                const transport = nodemailer.createTransport({
                   service: "gmail",
                   auth: {
                     user: "sociophin.services@gmail.com",
@@ -1537,7 +1536,7 @@ async function  compare (givenpass, accpass){
     const T_Id = req.body.T_Id;
   
     if (T_Id) {
-      query(
+      db.query(
         `delete from Tournaments where T_Id = "${T_Id}"`,
         (err, result) => {
           if (err) {
@@ -1562,7 +1561,7 @@ async function  compare (givenpass, accpass){
     const TimeStamp = new Date().valueOf();
   
     if (T_Id) {
-      query(
+      db.query(
         `SELECT * FROM Chess.T_Rooms where T_Id = ${T_Id} and  Status="Waiting" and Count<2;`,
         (err, result) => {
           if (err) {
@@ -1572,7 +1571,7 @@ async function  compare (givenpass, accpass){
             console.log(result);
             if(result && result.length > 0){
               res.send(result);
-              query(
+              db.query(
                 `update T_Rooms set Status="Full" , Count=Count+1 where T_Id="${T_Id}" and  Status="Waiting"`,
                 (err, result) => {
                   if (err) {
@@ -1585,7 +1584,7 @@ async function  compare (givenpass, accpass){
               
             }
             else{
-              query(
+              db.query(
                 `insert into T_Rooms (T_Id, TimeStamp, Status, Count) values("${T_Id}", "${TimeStamp}", "Waiting", 1)`,
                 (err, result) => {
                   if (err) {
@@ -1596,7 +1595,7 @@ async function  compare (givenpass, accpass){
                     if (result.affectedRows === 0) {
                       res.status(400).send(result.message);
                     } else {
-                      query(
+                      db.query(
                         `SELECT * FROM Chess.T_Rooms where T_Id="${T_Id}" and Status="Waiting";`,
                         (err, result) => {
                           if (err) {
@@ -1628,7 +1627,7 @@ async function  compare (givenpass, accpass){
     const T_Id = req.body.T_Id;
   
     if (T_Id) {
-      query(
+      db.query(
         `update T_Rooms set Status="Full" , Count=Count+1 where T_Id="${T_Id}" and  Status="Waiting"`,
         (err, result) => {
           if (err) {
@@ -1655,7 +1654,7 @@ async function  compare (givenpass, accpass){
     const userid = req.body.userid;
   
     if (userid) {
-      query(
+      db.query(
         `SELECT LastSpinTime from PlayerStats WHERE UserId = ${userid}`,
         (err, result) => {
           if (err) {
@@ -1691,12 +1690,12 @@ async function  compare (givenpass, accpass){
     const userid = req.body.userid;
     const coins = req.body.coins;
     
-    var currentCoins = query(`SELECT Coins FROM PlayerStats WHERE UserId=${userid}`)
+    var currentCoins = db.query(`SELECT Coins FROM PlayerStats WHERE UserId=${userid}`)
 
     
     if(userid && coins && typeof(coins) == "number"){
       var setCoins = currentCoins[0]["Coins"] + coins;
-      query(
+      db.query(
         `UPDATE PlayerStats SET Coins = ${setCoins} WHERE UserId = ${userid}`,
         (err,result) => {
           if(err){
@@ -1705,7 +1704,7 @@ async function  compare (givenpass, accpass){
           else{
             var today = new Date();
             today.setHours(0,0,0,0)
-            query(`UPDATE PlayerStats SET LastSpinTime = ${today} WHERE UserId = ${userid}`)
+            db.query(`UPDATE PlayerStats SET LastSpinTime = ${today} WHERE UserId = ${userid}`)
             res.status(200).send(setCoins)
           }
         }
@@ -1718,7 +1717,7 @@ async function  compare (givenpass, accpass){
 
   //test apis//
   app.get("/api/testAlter",(req,res) => {
-    query(`SELECT * FROM PlayerStats`,(err,result) => {
+    db.query(`SELECT * FROM PlayerStats`,(err,result) => {
       if(err){
         return res.send(err)
         //ALTER TABLE PlayerStats ADD Coins INTEGER

@@ -37,5 +37,8 @@
     "path": "^0.12.7",
     "serve-index": "^1.9.1"
   },
-  "type": "module"
+  "type": "commonjs",
+  "engines": {
+    "node": "14.x"
+  }
 }
