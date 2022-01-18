@@ -1,5 +1,4 @@
 import { createConnection } from 'mysql';
-// require("dotenv").config()
 
 
 const db = createConnection({
@@ -12,6 +11,7 @@ database:"Chess"
 //UPDATE PlayerStats SET Coins = ${setCoins} WHERE Email = ${email}
 //SELECT Coins FROM PlayerStats WHERE UserId = "rontinag311641793193347"
 //SELECT * FROM PlayerStats WHERE UserId = "rontinag311641793193347"
+
 db.query(
     `SELECT LastSpinTime FROM PlayerStats WHERE UserId = "rontinag311641793193347"`,
     (err, result) => {
@@ -20,7 +20,7 @@ db.query(
 
         }
         else{
-            console.log(result[0]["LastSpinTime"]);
+            console.log(result.message);
             // console.log(result[0]["LastSpinTime"] == null);
             console.log(typeof(result[0]["LastSpinTime"]));
         }

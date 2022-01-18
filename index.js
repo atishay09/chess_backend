@@ -1659,7 +1659,7 @@ async function  compare (givenpass, accpass){
         `SELECT LastSpinTime from PlayerStats WHERE UserId = ${userid}`,
         (err, result) => {
           if (err) {
-            console.log(err.sqlMessage);
+            res.send(400).send(err.sqlMessage);
           } 
           else {
             var timez = result[0]["LastSpinTime"]
@@ -1705,7 +1705,7 @@ async function  compare (givenpass, accpass){
           else{
             var today = new Date();
             today.setHours(0,0,0,0)
-            db.query(`UPDATE PlayerStats SET LastSpinTime = ${today} WHERE UserId ${userid}`)
+            db.query(`UPDATE PlayerStats SET LastSpinTime = ${today} WHERE UserId = ${userid}`)
             res.status(200).send(setCoins)
           }
         }
