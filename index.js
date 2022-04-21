@@ -95,10 +95,10 @@ app.post("/api/createUser", (req, res) => {
 
 
 app.get("/api/getUserDetails/:UserId", auth, (req, res) => {
-  const UserId = req.query.UserId;
+  const UserId = req.params.UserId;
 
 db.query(
-    `SELECT UserDetails.*, PlayerStats.* from UserDetails inner join PlayerStats on PlayerStats.UserId = UserDetails.UserId where UserDetails.UserId = '${req.user.user_id}';`,
+    `SELECT UserDetails.*, PlayerStats.* from UserDetails inner join PlayerStats on PlayerStats.UserId = UserDetails.UserId where UserDetails.UserId = '${UserId}';`,
     (err, result) => {
       if (err) {
         console.log(err);
