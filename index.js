@@ -453,47 +453,69 @@ app.get("/api/getAllTournament", (req, res) => {
 
 app.post("/api/createTournamentPlayers", (req, res) => {
   const UserId = req.body.UserId;
-  const T_id = req.body.T_id;
-  const T_Points = 0;
-  const MatchesWon = 0; 
-  const MatchesLoss = 0;
-  const MatchesDrawn = 0;
-  const TotalMatches = 0;
+  const T_Id = req.body.T_Id;
 
+  
   db.query(
-    `insert into T_Players (UserId,T_id,Timestamp,T_Points,MatchesWon,MatchesLoss,MatchesDrawn,TotalMatches) values ('${UserId}', '${T_id}', CURRENT_TIMESTAMP, '${T_Points}', '${MatchesWon}',  '${MatchesLoss}','${MatchesDrawn}', '${TotalMatches}');`,
-    (err, result) => {
-      if (err) {
-        console.log(err);
-        res.status(400).send(err.sqlMessage);
-      } else {
-        console.log(result);
-        db.query(
-          `insert into Logs (UserId,Logs.Match) values ('${UserId}','1'); `,
-          (err, result) => {
-            if (err) {
-              console.log(err);
-              res.status(400).send(err.sqlMessage);
-            } else {
-              console.log(result);
-              db.query(
-                `update PlayerStats set Points = Points - ${T_Points} where UserId = '${UserId}' and Points - ${T_Points} > 0;`,
-                (err, result) => {
-                  if (err) {
-                    console.log(err);
-                    res.status(400).send(err.sqlMessage);
-                  } else {
-                    console.log(result);
-                    res.send("Match Joined");
-                  }
-                }
-              );
+    `select UserDetails.UserId,PlayerStats.Coins from UserDetails inner join PlayerStats where UserDetails.UserId = "${UserId}" and PlayerStats.UserId = UserDetails.UserId and PlayerStats.Coins > (select T_Fee from Tournaments where T_Id = "${T_Id}")`,(err,result) => {
+      if(err){
+        res.status(400).send(err.sqlMessage)
+      }
+      else{
+        if(result.length < 1){
+          res.status(200).send("Insufficient Funds")
+        }
+        else if(result.length = 1){
+          db.query(`insert into T_Players (UserId,T_Id,Timestamp,T_Points,MatchesWon,MatchesLoss,MatchesDrawn,TotalMatches) values ('${UserId}', '${T_Id}', CURRENT_TIMESTAMP, 0, 0, 0, 0 , 0)`,(err,result) => {
+            if(err){
+              res.status(400).send(err.sqlMessage)
             }
-          }
-        );
+            else{
+              db.query(`update PlayerStats set Coins = Coins - (select T_Fee from Tournaments where T_Id = "${T_Id}") where UserId = "${UserId}"`)
+              res.status(200).send("Joined")
+            }
+          })
+        }
+        else{
+          res.status(400).send("Internal Error")
+        }
       }
     }
-  );
+  )
+  // db.query(
+  //   `insert into T_Players (UserId,T_id,Timestamp,T_Points,MatchesWon,MatchesLoss,MatchesDrawn,TotalMatches) values ('${UserId}', '${T_id}', CURRENT_TIMESTAMP, '${T_Points}', '${MatchesWon}',  '${MatchesLoss}','${MatchesDrawn}', '${TotalMatches}');`,
+  //   (err, result) => {
+  //     if (err) {
+  //       console.log(err);
+  //       res.status(400).send(err.sqlMessage);
+  //     } else {
+  //       console.log(result);
+  //       db.query(
+  //         `insert into Logs (UserId,Logs.Match) values ('${UserId}','1'); `,
+  //         (err, result) => {
+  //           if (err) {
+  //             console.log(err);
+  //             res.status(400).send(err.sqlMessage);
+  //           } else {
+  //             console.log(result);
+  //             db.query(
+  //               `update PlayerStats set Points = Points - ${T_Points} where UserId = '${UserId}' and Points - ${T_Points} > 0;`,
+  //               (err, result) => {
+  //                 if (err) {
+  //                   console.log(err);
+  //                   res.status(400).send(err.sqlMessage);
+  //                 } else {
+  //                   console.log(result);
+  //                   res.send("Match Joined");
+  //                 }
+  //               }
+  //             );
+  //           }
+  //         }
+  //       );
+  //     }
+  //   }
+  // );
   
 });
 
@@ -574,7 +596,7 @@ app.get("/api/getUserTournament/:UserId", (req, res) => {
 app.get("/api/getTournamentPlayers/:T_Id", (req, res) => {
   const T_Id = req.params.T_Id;
   db.query(
-    `SELECT * FROM Chess.T_Players where T_Id = "${T_Id}" and inMatch = "0";`,
+    `SELECT * FROM Chess.T_Players where T_Id = "${T_Id}"`,
     (err, result) => {
       if (err) {
         console.log(err);
