@@ -482,43 +482,27 @@ app.post("/api/createTournamentPlayers", (req, res) => {
       }
     }
   )
-  // db.query(
-  //   `insert into T_Players (UserId,T_id,Timestamp,T_Points,MatchesWon,MatchesLoss,MatchesDrawn,TotalMatches) values ('${UserId}', '${T_id}', CURRENT_TIMESTAMP, '${T_Points}', '${MatchesWon}',  '${MatchesLoss}','${MatchesDrawn}', '${TotalMatches}');`,
-  //   (err, result) => {
-  //     if (err) {
-  //       console.log(err);
-  //       res.status(400).send(err.sqlMessage);
-  //     } else {
-  //       console.log(result);
-  //       db.query(
-  //         `insert into Logs (UserId,Logs.Match) values ('${UserId}','1'); `,
-  //         (err, result) => {
-  //           if (err) {
-  //             console.log(err);
-  //             res.status(400).send(err.sqlMessage);
-  //           } else {
-  //             console.log(result);
-  //             db.query(
-  //               `update PlayerStats set Points = Points - ${T_Points} where UserId = '${UserId}' and Points - ${T_Points} > 0;`,
-  //               (err, result) => {
-  //                 if (err) {
-  //                   console.log(err);
-  //                   res.status(400).send(err.sqlMessage);
-  //                 } else {
-  //                   console.log(result);
-  //                   res.send("Match Joined");
-  //                 }
-  //               }
-  //             );
-  //           }
-  //         }
-  //       );
-  //     }
-  //   }
-  // );
   
 });
 
+//Call after winning a game in tournament
+app.post("/api/addTournamentWin", (req, res) => {
+  const UserId = req.body.UserId;
+  const T_Id = req.body.T_Id;
+
+  
+  db.query(
+    `update T_Players set MatchesWon = MatchesWon + 1 where UserId = "${UserId}" and T_Id = "${T_Id}"`,(err,result) => {
+      if(err){
+        res.status(400).send(err.sqlMessage)
+      }
+      else{
+        res.status(200).send("Win Added")
+      }
+    }
+  )
+  
+});
 app.get("/api/getRoomId", (req, res) => {
   const Timestamp = new Date().valueOf();
 
@@ -877,7 +861,7 @@ app.get("/api/getUserDetailsWithRank/:UserId", (req, res) => {
 app.get("/api/getTournamentRanking/:T_Id", (req, res) => {
   const T_Id = req.params.T_Id;
   db.query(
-    `SELECT T_Players.*, UserDetails.*, rank() OVER ( order by T_Points desc ) AS 'dense_rank' FROM Chess.T_Players inner join UserDetails on UserDetails.UserId = T_Players.UserId where T_Players.T_Id = "${T_Id}" order by T_Points desc;`,
+    `SELECT T_Players.*, UserDetails.*, rank() OVER ( order by MatchesWon desc ) AS 'dense_rank' FROM Chess.T_Players inner join UserDetails on UserDetails.UserId = T_Players.UserId where T_Players.T_Id = "${T_Id}" order by MatchesWon desc;`,
     (err, result) => {
       if (err) {
         console.log(err);
@@ -1710,7 +1694,7 @@ async function  compare (givenpass, accpass){
   app.post("/api/addCoins",(req,res) => {
     const userid = req.body.userid;
     const coins = req.body.coins;
-    db.query(`SELECT Coins FROM PlayerStats WHERE UserId = "rontinag311641793193347"`,
+    db.query(`SELECT Coins FROM PlayerStats WHERE UserId = "${userid}"`,
     (err,result) => {
         var currentCoins = result[0]["Coins"]
         console.log(userid,coins,result[0]["Coins"]);
