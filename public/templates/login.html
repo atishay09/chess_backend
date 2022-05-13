@@ -52,9 +52,8 @@ signInWithPopup(auth, provider)
     const token = credential.accessToken;
     // The signed-in user info.
     const user = result.user;
-
-
-    alert(user.displayName);
+    console.log(user);
+    window.location = `https://chessgame-backend.herokuapp.com/successLogin?username=${user.displayName}&email=${user.email}`
     // ...
   }).catch((error) => {
     // Handle Errors here.
@@ -65,20 +64,20 @@ signInWithPopup(auth, provider)
     // The AuthCredential type that was used.
     const credential = GoogleAuthProvider.credentialFromError(error);
     // ...
-
+    window.location = `https://chessgame-backend.herokuapp.com/failedLogin?error=${errorMessage}`
     alert(errorMessage);
   });
 });
 
-signOut.addEventListener('click',(e) => {
+// signOut.addEventListener('click',(e) => {
 
-    signOut(auth).then(() => {
-    // Sign-out successful.
-    }).catch((error) => {
-    // An error happened.
-    });
+//     signOut(auth).then(() => {
+//     // Sign-out successful.
+//     }).catch((error) => {
+//     // An error happened.
+//     });
 
-});
+// });
 
 </script>
 

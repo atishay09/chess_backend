@@ -63,7 +63,12 @@ app.post("/userDPUpload", upload.single("file"), function (req, res) {
 app.get('/app/login',(req,res) => {
   res.sendFile(path.join(__dirname + '/public/templates/login.html'))
 })
-
+app.get('/successLogin',(req,res) => {
+  res.send("Successfully Logged in")
+})
+app.get('/failedLogin',(req,res) => {
+  res.send("Login Failed")
+})
 
 app.post("/api/createUser", (req, res) => {
   //email,phone -> cumoplusory
