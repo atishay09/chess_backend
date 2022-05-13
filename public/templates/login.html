@@ -1,9 +1,9 @@
 <html>
 <head>
 <title>Google Authentication </title>
-<link rel="stylesheet" href="cssFile.css">
 </head>
-
+<link rel="stylesheet" href="/ftp/templates/cssFile.css">
+<script type="text/javascript" src="/ftp/js/firebaseConfig.js"></script>
 <body>
   
 <div id="login-box">
@@ -19,8 +19,6 @@
   <div class="right">
     <span class="loginwith">Sign in with<br />social network</span>
     
-    <button class="social-signin facebook">Log in with facebook</button>
-    <button class="social-signin twitter">Log in with Twitter</button>
     <button class="social-signin google" id='login'>Log in with Google+</button>
   </div>
   <div class="or">OR</div>
@@ -35,23 +33,15 @@
   // TODO: Add SDKs for Firebase products that you want to use
   // https://firebase.google.com/docs/web/setup#available-libraries
 
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyASFmDxUF8TKF3yprB2fL0b9AlJ6JzUnHk",
-    authDomain: "amertya-meraki.firebaseapp.com",
-    projectId: "amertya-meraki",
-    storageBucket: "amertya-meraki.appspot.com",
-    messagingSenderId: "59619629209",
-    appId: "1:59619629209:web:647a328caaedbb074d8008",
-    measurementId: "G-ZTP1FH9WF1"
-    };
+  
 
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const provider = new GoogleAuthProvider(app);
 
- login.addEventListener('click',(e) => {
+
+login.addEventListener('click',(e) => {
 
 
 // sign in with popup tab
@@ -78,17 +68,17 @@ signInWithPopup(auth, provider)
 
     alert(errorMessage);
   });
- });
+});
 
-  signOut.addEventListener('click',(e) => {
+signOut.addEventListener('click',(e) => {
 
-   signOut(auth).then(() => {
+    signOut(auth).then(() => {
     // Sign-out successful.
-   }).catch((error) => {
+    }).catch((error) => {
     // An error happened.
-   });
+    });
 
-  });
+});
 
 </script>
 
