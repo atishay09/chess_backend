@@ -497,23 +497,64 @@ app.post("/api/createTournamentPlayers", (req, res) => {
 });
 
 //Call after winning a game in tournament
-app.post("/api/addTournamentWin", (req, res) => {
+app.post("/api/addTournamentStatus", (req, res) => {
+  const Status = req.body.Status;
   const UserId = req.body.UserId;
   const T_Id = req.body.T_Id;
-
+  if(Status == "won"){
+    var query = `update T_Players set MatchesWon = MatchesWon + 1,TotalMatches = TotalMatches + 1 where UserId = "${UserId}" and T_Id = "${T_Id}"`;
+    var query1 = `update PlayerStats set Won = Won + 1,Total = Total + 1 where UserId = "${UserId}"`;
+  }
+  else if(Status == "lost"){
+    var query = `update T_Players set MatchesLoss = MatchesLoss + 1,TotalMatches = TotalMatches + 1 where UserId = "${UserId}" and T_Id = "${T_Id}"`;
+    var query1 = `update PlayerStats set Lose = Lose + 1,Total = Total + 1 where UserId = "${UserId}"`
+  }
   
-  db.query(
-    `update T_Players set MatchesWon = MatchesWon + 1 where UserId = "${UserId}" and T_Id = "${T_Id}"`,(err,result) => {
+  db.query(query,(err,result) => {
       if(err){
         res.status(400).send(err.sqlMessage)
       }
       else{
-        res.status(200).send("Win Added")
+        db.query(query1,(err,result) => {
+          if(err){
+            res.status(400).send(err.sqlMessage)
+          }
+          else{
+            res.status(200).send("Status Added")
+          }
+        })
+        
+      }
+    }
+  )
+});
+
+
+//Call after winning a game in online match
+
+app.post("/api/addOnlineMatchStatus", (req, res) => {
+  const Status = req.body.Status;
+  const UserId = req.body.UserId;
+  if(Status == "won"){
+    var query = `update PlayerStats set Won = Won + 1,Total = Total + 1 where UserId = "${UserId}"`
+  }
+  else if(Status == "lost"){
+    var query = `update PlayerStats set Lose = Lose + 1,Total = Total + 1 where UserId = "${UserId}"`
+  }
+  
+  db.query(
+    query,(err,result) => {
+      if(err){
+        res.status(400).send(err.sqlMessage)
+      }
+      else{
+        res.status(200).send("Status Added")
       }
     }
   )
   
 });
+
 app.get("/api/getRoomId", (req, res) => {
   const Timestamp = new Date().valueOf();
 
