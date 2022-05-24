@@ -495,6 +495,23 @@ app.post("/api/createTournamentPlayers", (req, res) => {
   )
   
 });
+app.post("/api/removeTournamentPlayers", (req, res) => {
+  const UserId = req.body.UserId;
+  const T_Id = req.body.T_Id;
+
+  
+  db.query(
+    `delete from T_Players where UserId = ${UserId} and T_Id = "${T_Id}"`,(err,result) => {
+      if(err){
+        res.status(400).send(err.sqlMessage)
+      }
+      else{
+        res.status(200).send("Removed from Tournament")
+      }
+    }
+  )
+  
+});
 
 //Call after winning a game in tournament
 app.post("/api/addTournamentStatus", (req, res) => {
