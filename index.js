@@ -1300,7 +1300,7 @@ app.post("/register", async (req, res) => {
    
 
     // Validate user input
-    if (!(Email && password && UserId && UserName && DisplayImg)) {
+    if (!(Email && password && UserId && UserName)) {
       res.status(400).send("All input is required");
     } else {
       var encryptedPassword = await bcrypt.hash(password, 10);
@@ -1325,7 +1325,7 @@ app.post("/register", async (req, res) => {
                   } else {
                     console.log(result);
                     db.query(
-                      `insert into PlayerStats (UserId,Points,Won, Lose, LastGame, Total, Drawn) values ('${UserId}', '100','0','0','0','0','0' );`,
+                      `insert into PlayerStats (UserId,Points,Won, Lose, LastGame, Total, Drawn) values ('${UserId}', '100','0','0','0','0','0');`,
                       (err, result) => {
                         if (err) {
                           console.log(err);
@@ -1449,7 +1449,7 @@ app.post("/login", (req, res) => {
                 }
               );
               result[0]["token"] = token;
-              res.status(200).send(result);
+              res.status(200).send("Success Login");
             }
             else{
               res.status(400).send("incorrect password");
