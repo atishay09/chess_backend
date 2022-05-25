@@ -17,26 +17,65 @@ const path = require("path");
 const multer = require("multer");
 const logger = require("morgan");
 const serveIndex = require("serve-index");
-
+const Aws = require('aws-sdk') 
 const auth = require("./middleware/auth");
 
 
+// Image Upload
+const storage = multer.memoryStorage({
+  destination: function (req, file, cb) {
+      cb(null, '')
+  }
+})
+const filefilter = (req, file, cb) => {
+  if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg') {
+      cb(null, true)
+  } else {
+      cb(null, false)
+  }
+}
+const upload = multer({ storage: storage, fileFilter: filefilter });
 
-var storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "./public/uploads");
-  },
-  filename: (req, file, cb) => {
-    cb(
-      null,
-      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
-    );
-  },
-});
+const s3 = new Aws.S3({
+  accessKeyId:"AKIA5ASXBV26YXC6SEUW",           
+  secretAccessKey:"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"
+})
 
-//will be using this for uplading
-const upload = multer({ storage: storage });
+//{Phone,uploadimage}
+app.post('/userDPUpload', upload.single('file'), (req, res) => {
 
+  var filename = req.body.UserId.toString()+".jpeg"
+  const params = {
+      Bucket:"chess",      // bucket that we made earlier
+      Key:filename,               // Name of the image
+      Body:req.file.buffer,                    // Body which will contain the image in buffer format
+      ACL:"public-read-write",                 // defining the permissions to get the public link
+      ContentType:"image/jpeg"                 // Necessary to define the image content-type to view the photo in the browser with the link
+  };
+    
+      
+  s3.upload(params,(error,data)=>{
+      if(error){
+          res.status(500).send({"err":error})  // if we get any error while uploading error message will be returned.
+      }
+      else{
+          console.log(data)
+          
+          var DisplayImg = "https://chess.s3.ap-south-1.amazonaws.com/" + filename
+          var query = `UPDATE UserDetails SET DisplayImg = ${DisplayImg} WHERE UserId = "${req.body.UserId}"`;
+          console.log(req.body.UserId,DisplayImg);
+          db.query(query,(err, result) => {
+                if (err) {
+                  res.status(400).send(err.sqlMessage);
+                }
+                else{                    
+                    res.status(200).send("Successfully Uploaded");            
+                } 
+              }
+          );             
+      }         
+  })
+})
 //get the router
 
 app.use(logger("tiny"));
@@ -53,11 +92,7 @@ app.get("/", function (req, res) {
   return res.send("hello from my app express server!");
 });
 
-app.post("/userDPUpload", upload.single("file"), function (req, res) {
-  debug(req.file);
-  console.log("storage location is ", req.hostname + "/" + req.file.path);
-  return res.send(req.file);
-});
+
 
 //Web Login
 app.get('/app/login',(req,res) => {
@@ -1291,7 +1326,8 @@ app.post("/register", async (req, res) => {
   // Our register logic starts here
   try {
     // Get user input
-    const { UserName, Email, password, DisplayImg } = req.body;
+    const { UserName, Email, password } = req.body;
+    const DisplayImg = "https://i.stack.imgur.com/l60Hf.png"
     var UserId = Email;
     const TimeStamp = new Date().valueOf();
     UserId = UserId.split('@');
