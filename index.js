@@ -20,6 +20,19 @@ const serveIndex = require("serve-index");
 const Aws = require('aws-sdk') 
 const auth = require("./middleware/auth");
 
+app.use(logger("tiny"));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+//app.use(express.static('public'));
+app.use(
+  "/ftp",
+  express.static("public"),
+  serveIndex("public", { icons: true })
+);
+
+app.get("/", function (req, res) {
+  return res.send("hello from my app express server!");
+});
 
 // Image Upload
 const storage = multer.memoryStorage({
@@ -78,19 +91,7 @@ app.post('/userDPUpload', upload.single('file'), (req, res) => {
 })
 //get the router
 
-app.use(logger("tiny"));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-//app.use(express.static('public'));
-app.use(
-  "/ftp",
-  express.static("public"),
-  serveIndex("public", { icons: true })
-);
 
-app.get("/", function (req, res) {
-  return res.send("hello from my app express server!");
-});
 
 
 
