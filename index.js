@@ -1354,7 +1354,7 @@ app.post("/register", async (req, res) => {
               res.status(409).send("User Already Exist. Please Login");
             } else {
               db.query(
-                `insert into UserDetails (UserId,Email,Joining,LastLogin,UserName,DisplayImg,password) values ('${UserId}', '${Email}', '', '', '${UserName}',  '${DisplayImg}',"${encryptedPassword}");`,
+                `insert into UserDetails (UserId,Email,Joining,LastLogin,UserName,DisplayImg,password) values ('${UserId}', '${Email}', CURRENT_TIMESTAMP, '', '${UserName}',  '${DisplayImg}',"${encryptedPassword}");`,
                 (err, result) => {
                   if (err) {
                     console.log(err);
@@ -1362,14 +1362,14 @@ app.post("/register", async (req, res) => {
                   } else {
                     console.log(result);
                     db.query(
-                      `insert into PlayerStats (UserId,Points,Won, Lose, LastGame, Total, Drawn) values ('${UserId}', '100','0','0','0','0','0');`,
+                      `insert into PlayerStats (UserId,Points,Won, Lose, LastGame, Total, Drawn) values ('${UserId}', '100','0','0',CURRENT_TIMESTAMP,'0','0');`,
                       (err, result) => {
                         if (err) {
                           console.log(err);
                           res.status(400).send(err.sqlMessage);
                         } else {
                           console.log(result);
-                          res.send("Succefully added to db");
+                          res.send({"userid":UserId});
                         }
                       }
                     );
