@@ -1362,7 +1362,7 @@ app.post("/register", async (req, res) => {
                   } else {
                     console.log(result);
                     db.query(
-                      `insert into PlayerStats (UserId,Points,Won, Lose, LastGame, Total, Drawn) values ('${UserId}', '100','0','0',CURRENT_TIMESTAMP,'0','0');`,
+                      `insert into PlayerStats (UserId,Points,Won, Lose, LastGame, Total, Drawn,Coins) values ('${UserId}', 100,0,0,CURRENT_TIMESTAMP,0,0,0);`,
                       (err, result) => {
                         if (err) {
                           console.log(err);
