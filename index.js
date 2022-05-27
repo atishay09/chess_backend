@@ -1486,7 +1486,7 @@ app.post("/login", (req, res) => {
                 }
               );
               result[0]["token"] = token;
-              res.status(200).send("Success Login");
+              res.status(200).send({user_id:result[0]["UserId"]});
             }
             else{
               res.status(400).send("incorrect password");
