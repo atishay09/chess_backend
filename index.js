@@ -30,9 +30,13 @@ app.use(
   serveIndex("public", { icons: true })
 );
 
+
+//
 app.get("/", function (req, res) {
   return res.send("hello from my app express server!");
 });
+
+
 
 // Image Upload
 const storage = multer.memoryStorage({
@@ -48,11 +52,12 @@ const filefilter = (req, file, cb) => {
   }
 }
 const upload = multer({ storage: storage, fileFilter: filefilter });
-
 const s3 = new Aws.S3({
   accessKeyId:"AKIA5ASXBV26YXC6SEUW",           
   secretAccessKey:"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"
 })
+
+
 
 //{Phone,uploadimage}
 app.post('/userDPUpload', upload.single('file'), (req, res) => {
@@ -89,9 +94,6 @@ app.post('/userDPUpload', upload.single('file'), (req, res) => {
       }         
   })
 })
-//get the router
-
-
 
 
 
@@ -145,18 +147,18 @@ app.post("/api/createUser", (req, res) => {
 app.get("/api/getUserDetails/:UserId", (req, res) => {
   const UserId = req.params.UserId;
 
-db.query(
-    `SELECT UserDetails.*, PlayerStats.* from UserDetails inner join PlayerStats on PlayerStats.UserId = UserDetails.UserId where UserDetails.UserId = '${UserId}'`,
-    (err, result) => {
-      if (err) {
-        console.log(err);
-        res.status(400).send(err.sqlMessage);
-      } else {
-        console.log(result);
-        res.status(200).send(result);
+  db.query(
+      `SELECT UserDetails.*, PlayerStats.* from UserDetails inner join PlayerStats on PlayerStats.UserId = UserDetails.UserId where UserDetails.UserId = '${UserId}'`,
+      (err, result) => {
+        if (err) {
+          console.log(err);
+          res.status(400).send(err.sqlMessage);
+        } else {
+          console.log(result);
+          res.status(200).send(result);
+        }
       }
-    }
-  );
+    );
  
   
 });
@@ -461,29 +463,60 @@ app.post("/api/createStats", (req, res) => {
   }
 });
 
+
+
+//timeout functions
+function endTournament(T_Id) {
+  console.log("Running EndTournament for "+T_Id);
+  db.query(`UPDATE Tournaments SET Status = "Ended" WHERE T_Id = '${T_Id}'`,(err,result) => {
+    if(err) console.log(err.sqlMessage);
+    else{
+      db.query(`SELECT T_Players.MAX(MatchesWon),T_Players.UserId,UserDetails.UserName FROM T_Players INNER JOIN UserDetails WHERE T_Id = "${T_Id}"`,(err,result) =>{
+        if(err) console.log(err.sqlMessage);
+        else{
+          db.query(`UPDATE PlayerStats SET Coins = Coins + (SELECT TotalPoints FROM Tournaments WHERE T_Id = "${T_Id}") WHERE UserId = "${result[0]["UserId"]}"`,(err,result) => {
+            if(err) console.log(err.sqlMessage);
+          })
+        }
+      })
+    } 
+  })
+}
+
+//Add T_Time to Tournaments 
+//change TotalPoints to Integer
 app.post("/api/createTournament", (req, res) => {
   const T_Id = Date.now().toString();
+  const T_Time = req.body.T_Time ? req.body.T_Time : null;
   const T_Name = req.body.T_Name ? req.body.T_Name : "";
   const TotalPoints = req.body.TotalPoints ? req.body.TotalPoints : 0;
   const TotalGames = req.body.TotalGames ? req.body.TotalGames : 0;
   const Description = req.body.Description ? req.body.Description : "";
   const T_img = req.body.T_Img ? req.body.T_Img : "";
-  const Status = req.body.Status ? req.body.Status : "";
+  const Status = req.body.Status ? req.body.Status : "Running";
   const T_Fee = req.body.T_Fee ? req.body.T_Fee : 0;
   const Max_Players = req.body.Max_Players ? req.body.Max_Players : 0;
 
-  db.query(
-    `insert into Tournaments (T_Id,T_Name,TotalPoints,TotalGames,Description,T_img,Status,T_Fee,Max_Players) values ('${T_Id}', '${T_Name}', '${TotalPoints}', '${TotalGames}', '${Description}',  '${T_img}','${Status}', '${T_Fee}', ${Max_Players});`,
-    (err, result) => {
-      if (err) {
-        console.log(err);
-        res.status(400).send(err.sqlMessage);
-      } else {
-        console.log(result);
-        res.send("T ID : " + T_Id);
+  if(!T_Id || !T_Time || typeof(T_Time) != "number") res.status(400).send("All Fields Required and T_Time should be Integer")
+  else{
+    db.query(
+      `insert into Tournaments (T_Id,T_Name,TotalPoints,TotalGames,Description,T_img,Status,T_Fee,Max_Players,T_Time) 
+      values ('${T_Id}', '${T_Name}', ${TotalPoints}, '${TotalGames}', '${Description}',  '${T_img}','${Status}', '${T_Fee}', ${Max_Players},${T_Time});`,
+      (err, result) => {
+        if (err) {
+          console.log(err);
+          res.status(400).send(err.sqlMessage);
+        } else {
+          console.log(result);
+          res.send("T ID : " + T_Id);
+        }
       }
-    }
-  );
+    );
+    //end tournament timer
+    setTimeout(() => {
+      endTournament(T_Id);
+    }, T_Time);
+  }
 });
 
 app.get("/api/getAllTournament", (req, res) => {
@@ -531,11 +564,11 @@ app.post("/api/createTournamentPlayers", (req, res) => {
   )
   
 });
+
 app.post("/api/removeTournamentPlayers", (req, res) => {
   const UserId = req.body.UserId;
   const T_Id = req.body.T_Id;
 
-  
   db.query(
     `delete from T_Players where UserId = ${UserId} and T_Id = "${T_Id}"`,(err,result) => {
       if(err){
@@ -582,6 +615,87 @@ app.post("/api/addTournamentStatus", (req, res) => {
   )
 });
 
+app.get("/api/getTournamentByAuth/:UserId", (req, res) => {
+  const UserId = req.params.UserId;
+  db.query(
+    `SELECT * , case when exists( SELECT * FROM T_Players WHERE UserId = '${UserId}' and T_Id = Tournaments.T_Id ) then 'True' else 'False' end as isPresent, (select count(*) from T_Players where T_Players.T_Id = Tournaments.T_Id) as count, case when (select count(*) from T_Players where T_Players.T_Id = Tournaments.T_Id) >= Max_Players then "true" else "false" end as Max_Reached FROM Chess.Tournaments;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+      } else {
+        console.log(result);
+        res.send(result);
+      }
+    }
+  );
+});
+
+app.post("/api/DeleteTPlayers", (req, res) => {
+  const T_Id = req.body.T_Id;
+  const UserId = req.body.UserId;
+
+  db.query(
+    `delete from T_Players where T_Id = "${T_Id}" and UserId = "${UserId}";`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+      } else {
+        console.log(result);
+        res.send("Succefully added to db");
+      }
+    }
+  );
+});
+
+app.get("/api/getUserTournament/:UserId", (req, res) => {
+  const UserId = req.params.UserId;
+  db.query(
+    `SELECT T_Players.*, Tournaments.* FROM Chess.T_Players inner join Tournaments on Tournaments.T_Id = T_Players.T_Id where UserId="${UserId}";`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+      } else {
+        console.log(result);
+        res.send(result);
+      }
+    }
+  );
+});
+
+app.get("/api/getTournamentPlayers/:T_Id", (req, res) => {
+  const T_Id = req.params.T_Id;
+  db.query(
+    `SELECT * FROM Chess.T_Players where T_Id = "${T_Id}"`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+      } else {
+        console.log(result);
+        res.send(result);
+      }
+    }
+  );
+});
+
+app.get("/api/getTournamentRanking/:T_Id", (req, res) => {
+  const T_Id = req.params.T_Id;
+  db.query(
+    `SELECT T_Players.*, UserDetails.*, rank() OVER ( order by MatchesWon desc ) AS 'dense_rank' FROM Chess.T_Players inner join UserDetails on UserDetails.UserId = T_Players.UserId where T_Players.T_Id = "${T_Id}" order by MatchesWon desc;`,
+    (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err.sqlMessage);
+      } else {
+        console.log(result);
+        res.send(result);
+      }
+    }
+  );
+});
 
 //Call after winning a game in online match
 
@@ -635,68 +749,7 @@ app.get("/api/getRoomId", (req, res) => {
     }
   );
 });
-app.get("/api/getTournamentByAuth/:UserId", (req, res) => {
-  const UserId = req.params.UserId;
-  db.query(
-    `SELECT * , case when exists( SELECT * FROM T_Players WHERE UserId = '${UserId}' and T_Id = Tournaments.T_Id ) then 'True' else 'False' end as isPresent, (select count(*) from T_Players where T_Players.T_Id = Tournaments.T_Id) as count, case when (select count(*) from T_Players where T_Players.T_Id = Tournaments.T_Id) >= Max_Players then "true" else "false" end as Max_Reached FROM Chess.Tournaments;`,
-    (err, result) => {
-      if (err) {
-        console.log(err);
-        res.status(400).send(err.sqlMessage);
-      } else {
-        console.log(result);
-        res.send(result);
-      }
-    }
-  );
-});
-app.post("/api/DeleteTPlayers", (req, res) => {
-  const T_Id = req.body.T_Id;
-  const UserId = req.body.UserId;
 
-  db.query(
-    `delete from T_Players where T_Id = "${T_Id}" and UserId = "${UserId}";`,
-    (err, result) => {
-      if (err) {
-        console.log(err);
-        res.status(400).send(err.sqlMessage);
-      } else {
-        console.log(result);
-        res.send("Succefully added to db");
-      }
-    }
-  );
-});
-app.get("/api/getUserTournament/:UserId", (req, res) => {
-  const UserId = req.params.UserId;
-  db.query(
-    `SELECT T_Players.*, Tournaments.* FROM Chess.T_Players inner join Tournaments on Tournaments.T_Id = T_Players.T_Id where UserId="${UserId}";`,
-    (err, result) => {
-      if (err) {
-        console.log(err);
-        res.status(400).send(err.sqlMessage);
-      } else {
-        console.log(result);
-        res.send(result);
-      }
-    }
-  );
-});
-app.get("/api/getTournamentPlayers/:T_Id", (req, res) => {
-  const T_Id = req.params.T_Id;
-  db.query(
-    `SELECT * FROM Chess.T_Players where T_Id = "${T_Id}"`,
-    (err, result) => {
-      if (err) {
-        console.log(err);
-        res.status(400).send(err.sqlMessage);
-      } else {
-        console.log(result);
-        res.send(result);
-      }
-    }
-  );
-});
 app.post("/api/createTournamentStats", (req, res) => {
   const UserId = req.body.UserId;
   const T_Id = req.body.T_Id;
@@ -963,21 +1016,7 @@ app.get("/api/getUserDetailsWithRank/:UserId", (req, res) => {
   );
 });
 
-app.get("/api/getTournamentRanking/:T_Id", (req, res) => {
-  const T_Id = req.params.T_Id;
-  db.query(
-    `SELECT T_Players.*, UserDetails.*, rank() OVER ( order by MatchesWon desc ) AS 'dense_rank' FROM Chess.T_Players inner join UserDetails on UserDetails.UserId = T_Players.UserId where T_Players.T_Id = "${T_Id}" order by MatchesWon desc;`,
-    (err, result) => {
-      if (err) {
-        console.log(err);
-        res.status(400).send(err.sqlMessage);
-      } else {
-        console.log(result);
-        res.send(result);
-      }
-    }
-  );
-});
+
 
 app.get("/api/allSync_CMS/tenentId=:tenentId", (req, res) => {
   const tenentId = req.params.tenentId;
@@ -1832,18 +1871,6 @@ async function  compare (givenpass, accpass){
     
   })
 
-  //test apis//
-  app.get("/api/testAlter",(req,res) => {
-    db.query(`SELECT * FROM PlayerStats`,(err,result) => {
-      if(err){
-        return res.send(err)
-        //ALTER TABLE PlayerStats ADD Coins INTEGER
-      }
-      else{
-        return res.send(result)
-      }
-    })
-  })
 
 
 app.listen(process.env.PORT || 4000, () => {
