@@ -474,9 +474,11 @@ function endTournament(T_Id) {
       db.query(`SELECT T_Players.MAX(MatchesWon),T_Players.UserId,UserDetails.UserName FROM T_Players INNER JOIN UserDetails WHERE T_Id = "${T_Id}"`,(err,result) =>{
         if(err) console.log(err.sqlMessage);
         else{
-          db.query(`UPDATE PlayerStats SET Coins = Coins + (SELECT TotalPoints FROM Tournaments WHERE T_Id = "${T_Id}") WHERE UserId = "${result[0]["UserId"]}"`,(err,result) => {
-            if(err) console.log(err.sqlMessage);
-          })
+          result.forEach(element => {
+            db.query(`UPDATE PlayerStats SET Coins = Coins + (SELECT TotalPoints / ${result.length} FROM Tournaments WHERE T_Id = "${T_Id}") WHERE UserId = "${element["UserId"]}"`,(err,result) => {
+              if(err) console.log(err.sqlMessage);
+            })
+          });
         }
       })
     } 
