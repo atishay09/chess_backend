@@ -502,8 +502,8 @@ app.post("/api/createTournament", (req, res) => {
   if(!T_Id || !T_Time || typeof(T_Time) != "number") res.status(400).send("All Fields Required and T_Time should be Integer")
   else{
     db.query(
-      `insert into Tournaments (T_Id,T_Name,TotalPoints,TotalGames,Description,T_img,Status,T_Fee,Max_Players,T_Time) 
-      values ('${T_Id}', '${T_Name}', ${TotalPoints}, ${TotalGames}, '${Description}',  '${T_img}','${Status}', ${T_Fee}, ${Max_Players},${T_Time});`,
+      `insert into Tournaments (T_Id,T_Name,TotalPoints,TotalGames,Description,T_img,Status,T_Fee,Max_Players,T_Time,StartTime) 
+      values ('${T_Id}', '${T_Name}', ${TotalPoints}, ${TotalGames}, '${Description}',  '${T_img}','${Status}', ${T_Fee}, ${Max_Players},${T_Time},CURRENT_TIMESTAMP);`,
       (err, result) => {
         if (err) {
           console.log(err);
