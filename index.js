@@ -1842,6 +1842,7 @@ async function  compare (givenpass, accpass){
   app.post("/api/addCoins",(req,res) => {
     const userid = req.body.userid;
     const coins = req.body.coins;
+    const type = req.body.type;
     db.query(`SELECT Coins FROM PlayerStats WHERE UserId = "${userid}"`,
     (err,result) => {
         var currentCoins = result[0]["Coins"]
@@ -1855,11 +1856,13 @@ async function  compare (givenpass, accpass){
                 res.status(400).send(err.sqlMessage)
               }
               else{
-                var today = new Date();
-                today.setHours(0,0,0,0)
-                db.query(`UPDATE PlayerStats SET LastSpinTime = "${today}" WHERE UserId = "${userid}"`)
-                console.log(setCoins)
-                res.status(200).send(setCoins.toString())
+                if(type == "spin"){
+                  var today = new Date();
+                  today.setHours(0,0,0,0)
+                  db.query(`UPDATE PlayerStats SET LastSpinTime = "${today}" WHERE UserId = "${userid}"`)
+                  console.log(setCoins)
+                  res.status(200).send(setCoins.toString())
+                }
               }
             }
           )
