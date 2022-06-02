@@ -1866,6 +1866,9 @@ async function  compare (givenpass, accpass){
                   console.log(setCoins)
                   res.status(200).send(setCoins.toString())
                 }
+                else{
+                  res.status(200).send(setCoins.toString())
+                }
               }
             }
           )
