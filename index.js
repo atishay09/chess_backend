@@ -509,13 +509,14 @@ app.post("/api/createTournament", (req, res) => {
         } else {
           console.log(result);
           res.send("T ID : " + T_Id);
+          //end tournament timer
+          setTimeout(() => {
+            endTournament(T_Id);
+          }, T_Time * 60 * 1000);
         }
       }
     );
-    //end tournament timer
-    setTimeout(() => {
-      endTournament(T_Id);
-    }, T_Time * 60 * 1000);
+    
   }
 });
 
