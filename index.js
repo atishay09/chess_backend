@@ -515,7 +515,7 @@ app.post("/api/createTournament", (req, res) => {
     //end tournament timer
     setTimeout(() => {
       endTournament(T_Id);
-    }, T_Time);
+    }, T_Time * 60 * 1000);
   }
 });
 
