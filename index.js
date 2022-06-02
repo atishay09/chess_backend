@@ -503,7 +503,7 @@ app.post("/api/createTournament", (req, res) => {
   else{
     db.query(
       `insert into Tournaments (T_Id,T_Name,TotalPoints,TotalGames,Description,T_img,Status,T_Fee,Max_Players,T_Time) 
-      values ('${T_Id}', '${T_Name}', ${TotalPoints}, '${TotalGames}', '${Description}',  '${T_img}','${Status}', '${T_Fee}', ${Max_Players},${T_Time});`,
+      values ('${T_Id}', '${T_Name}', ${TotalPoints}, ${TotalGames}, '${Description}',  '${T_img}','${Status}', ${T_Fee}, ${Max_Players},${T_Time});`,
       (err, result) => {
         if (err) {
           console.log(err);
