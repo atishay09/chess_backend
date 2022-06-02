@@ -1843,8 +1843,11 @@ async function  compare (givenpass, accpass){
     const userid = req.body.userid;
     const coins = req.body.coins;
     const type = req.body.type;
+    console.log(req)
     db.query(`SELECT Coins FROM PlayerStats WHERE UserId = "${userid}"`,
     (err,result) => {
+      if(err) console.log(err.sqlMessage);
+      else{
         var currentCoins = result[0]["Coins"]
         console.log(userid,coins,result[0]["Coins"]);
         if(userid && coins){
@@ -1871,6 +1874,7 @@ async function  compare (givenpass, accpass){
           res.status(400).send("POST error")
         }
       }
+    }
     )
     
     
