@@ -578,7 +578,7 @@ app.post("/api/removeTournamentPlayers", (req, res) => {
   const T_Id = req.body.T_Id;
 
   db.query(
-    `delete from T_Players where UserId = ${UserId} and T_Id = "${T_Id}"`,(err,result) => {
+    `delete from T_Players where UserId = "${UserId}" and T_Id = "${T_Id}"`,(err,result) => {
       if(err){
         res.status(400).send(err.sqlMessage)
       }
@@ -676,7 +676,7 @@ app.get("/api/getUserTournament/:UserId", (req, res) => {
 app.get("/api/getTournamentPlayers/:T_Id", (req, res) => {
   const T_Id = req.params.T_Id;
   db.query(
-    `SELECT * FROM Chess.T_Players where T_Id = "${T_Id}"`,
+    `SELECT T_Players.*,UserDetails.UserName FROM T_Players INNER JOIN UserDetails where T_Players.UserId = UserDetails.UserId AND T_Id = "${T_Id}"`,
     (err, result) => {
       if (err) {
         console.log(err);
