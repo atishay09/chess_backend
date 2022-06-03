@@ -537,20 +537,25 @@ app.get("/api/getAllTournament", (req, res) => {
 app.post("/api/createTournamentPlayers", (req, res) => {
   const UserId = req.body.UserId;
   const T_Id = req.body.T_Id;
-
+  console.log(UserId,T_Id);
   
   db.query(
     `select UserDetails.UserId,PlayerStats.Coins from UserDetails inner join PlayerStats where UserDetails.UserId = "${UserId}" and PlayerStats.UserId = UserDetails.UserId and PlayerStats.Coins > (select T_Fee from Tournaments where T_Id = "${T_Id}")`,(err,result) => {
       if(err){
+        console.log('====================================');
+        console.log(err.sqlMessage);
+        console.log('====================================');
         res.status(400).send(err.sqlMessage)
       }
       else{
+        console.log(result);
         if(result.length < 1){
           res.status(200).send("Insufficient Funds")
         }
         else if(result.length = 1){
           db.query(`insert into T_Players (UserId,T_Id,Timestamp,T_Points,MatchesWon,MatchesLoss,MatchesDrawn,TotalMatches) values ('${UserId}', '${T_Id}', CURRENT_TIMESTAMP, 0, 0, 0, 0 , 0)`,(err,result) => {
             if(err){
+              console.log(err.sqlMessage);
               res.status(400).send(err.sqlMessage)
             }
             else{
