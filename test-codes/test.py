@@ -1,11 +1,11 @@
 import requests
   
 # defining the api-endpoint 
-API_ENDPOINT = "http://localhost:4000/api/addCoins"
+API_ENDPOINT = "http://localhost:4000/login"
 
   
 # data to be sent to api
-data = {"userid":"rontinag311641793193347","coins":200}
+data = {"Email" : "atishayjain@gmail3.com","password" : "12345678"}
   
 # sending post request and saving response as response object
 r = requests.post(url = API_ENDPOINT, data = data)

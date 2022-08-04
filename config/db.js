@@ -9,9 +9,9 @@ require("dotenv").config()
 // database:"Chess" 
 // })
 const db = mysql.createConnection({
-    host: "chess.cp6fonzwfmav.ap-south-1.rds.amazonaws.com",
-    user: "admin",
-    password: "ChessBE123",
+    host: "localhost",
+    user: "root",
+    password: "password",
     database:"Chess" 
     })
 

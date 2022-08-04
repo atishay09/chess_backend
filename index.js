@@ -20,6 +20,8 @@ const serveIndex = require("serve-index");
 const Aws = require('aws-sdk') 
 const auth = require("./middleware/auth");
 
+const TOKEN_KEY = process.env.TOKEN_KEY;
+
 app.use(logger("tiny"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -1527,7 +1529,7 @@ app.post("/login", (req, res) => {
             if(bcrypt.compareSync(password, result[0]["password"])){
               const token = jwt.sign(
                 { user_id: result[0]["UserId"], Email },
-                process.env.TOKEN_KEY,
+                  TOKEN_KEY,
                 {
                   expiresIn: "48h",
                 }
